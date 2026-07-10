@@ -486,14 +486,20 @@ export async function prepareMobAttack(html, selectedTokenIds, weapons, availabl
   }
   let withAdvantage = false
   let withDisadvantage = false
+  let withElvenAcurracy = false
   let rollTypeValue = 0
   let rollTypeMessage = ``
+  
   if (game.settings.get(moduleName, 'askRollType')) {
     let rtValue = Math.floor(game.settings.get(moduleName, 'rollTypeValue'))
     if (html.find('[name=rollType]')[0].value === 'advantage') {
       rollTypeValue = rtValue
       withAdvantage = true
       rollTypeMessage = ` + ${rtValue} [adv]`
+    }else if (html.find('[name=rollType]')[0].value === 'elvenAcurracy') {
+      rollTypeValue = rtValue
+      withElvenAcurracy = true
+      rollTypeMessage = ` + ${rtValue} [elven]`
     }
     else if (html.find('[name=rollType]')[0].value === 'disadvantage') {
       rollTypeValue = -1 * rtValue
@@ -511,6 +517,7 @@ export async function prepareMobAttack(html, selectedTokenIds, weapons, availabl
     weapons,
     attacks,
     withAdvantage,
+    withElvenAcurracy,
     withDisadvantage,
     rollTypeValue,
     rollTypeMessage,

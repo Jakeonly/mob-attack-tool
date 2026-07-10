@@ -43,7 +43,7 @@ export class MobAttackDialog extends FormApplication {
     this.collapsibleCSS = 'mat-collapsible-content-closed'
     this.collapsiblePlusMinus = 'plus'
 
-    this.rollTypeSelection = { advantage: '', normal: 'selected', disadvantage: '' }
+    this.rollTypeSelection = {elvenAcurracy: '', advantage: '', normal: 'selected', disadvantage: '' }
 
     //Crit Handler
     this.tripleCriticalSelection = "checked";
@@ -706,6 +706,8 @@ export class MobAttackDialog extends FormApplication {
         mobAttackData.tripleCritical = html.find('[name="tripleCritical"]').prop("checked")
         mobAttackData.extraDice = html.find('[name="extraDice"]').prop("checked")
 
+        console.log(mobAttackData);
+        
         mobAttackData.event = event
         if (game.settings.get(moduleName, 'mobRules') === 0) {
           rollMobAttack(mobAttackData)
@@ -782,6 +784,7 @@ export class MobAttackDialog extends FormApplication {
 
       // if macro not exported explicitly with advantage/disadvantage,
       // make the macro respond to alt (option on MacOS) and ctrl (Command on MacOS) for advantage/disadvantage.
+      let elvenKeyEvent = mobAttackData.elvenAcurracy
       let advKeyEvent = mobAttackData.withAdvantage
       let disadvKeyEvent = mobAttackData.withDisadvantage
       let tripleCritKeyEvent = mobAttackData.tripleCritical
@@ -821,7 +824,7 @@ export class MobAttackDialog extends FormApplication {
         this.collapsiblePlusMinus = 'plus'
         this.collapsibleCSS = 'mat-collapsible-content-closed'
       }
-      let rollTypeOptions = { advantage: '', normal: '', disadvantage: '' }
+      let rollTypeOptions = {elvenAcurracy: '', advantage: '', normal: '', disadvantage: '' }
       rollTypeOptions[html.find('[name=rollType]')[0]?.value ?? 'normal'] = 'selected'
       this.rollTypeSelection = rollTypeOptions
       this.localUpdate = true
