@@ -706,6 +706,8 @@ export class MobAttackDialog extends FormApplication {
         mobAttackData.tripleCritical = html.find('[name="tripleCritical"]').prop("checked")
         mobAttackData.extraDice = html.find('[name="extraDice"]').prop("checked")
 
+        console.log(mobAttackData);
+
         mobAttackData.event = event
         if (game.settings.get(moduleName, 'mobRules') === 0) {
           rollMobAttack(mobAttackData)

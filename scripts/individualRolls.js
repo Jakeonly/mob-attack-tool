@@ -252,10 +252,8 @@ export async function processIndividualDamageRolls(data, weaponData, finalAttack
 
           if (numCrits > 0) {
             //Variables para 3x crit y extraDice
-            console.log(mobAttackData.tripleCritical);
-            console.log(mobAttackData.extraDice);
-            let extraDice = true
-            let extraCrit = true
+            let extraDice = data.data.extraDice
+            let extraCrit = data.data.tripleCritical
             // Add critical damage dice on each successful attack, up to the number of crits
             let critDice = [], critDie
             let damageRollDiceTerms = damageRoll. terms.filter(t => t.number > 0 && t.faces > 0)
