@@ -784,7 +784,7 @@ export class MobAttackDialog extends FormApplication {
 
       // if macro not exported explicitly with advantage/disadvantage,
       // make the macro respond to alt (option on MacOS) and ctrl (Command on MacOS) for advantage/disadvantage.
-      let elvenKeyEvent = mobAttackData.elvenAcurracy
+      let elvenKeyEvent = mobAttackData.withElvenAcurracy
       let advKeyEvent = mobAttackData.withAdvantage
       let disadvKeyEvent = mobAttackData.withDisadvantage
       let tripleCritKeyEvent = mobAttackData.tripleCritical
@@ -798,7 +798,7 @@ export class MobAttackDialog extends FormApplication {
       let macroData = {
         type: 'script',
         name: selectedName,
-        command: `MobAttacks.quickRoll({numSelected: ${mobAttackData.numSelected}, weaponLocators: ${JSON.stringify(mobAttackData.weaponLocators)}, attacks: ${JSON.stringify(mobAttackData.attacks)}, withAdvantage: ${advKeyEvent}, withDisadvantage: ${disadvKeyEvent}, rollTypeValue: ${mobAttackData.rollTypeValue}, tripleCritical: ${tripleCritKeyEvent}, extraDice: ${extraDiceKeyEvent} ,rollTypeMessage: "${mobAttackData.rollTypeMessage}", endMobTurn: ${mobAttackData.endMobTurn}, monsters: ${JSON.stringify(mobAttackData.monsters)}})`,
+        command: `MobAttacks.quickRoll({numSelected: ${mobAttackData.numSelected}, weaponLocators: ${JSON.stringify(mobAttackData.weaponLocators)}, attacks: ${JSON.stringify(mobAttackData.attacks)}, withElvenAcurracy: ${elvenKeyEvent} ,withAdvantage: ${advKeyEvent}, withDisadvantage: ${disadvKeyEvent}, rollTypeValue: ${mobAttackData.rollTypeValue}, tripleCritical: ${tripleCritKeyEvent}, extraDice: ${extraDiceKeyEvent} ,rollTypeMessage: "${mobAttackData.rollTypeMessage}", endMobTurn: ${mobAttackData.endMobTurn}, monsters: ${JSON.stringify(mobAttackData.monsters)}})`,
         img: mobAttackData.weapons[key].img,
       }
 

@@ -499,7 +499,7 @@ export async function prepareMobAttack(html, selectedTokenIds, weapons, availabl
     }else if (html.find('[name=rollType]')[0].value === 'elvenAcurracy') {
       rollTypeValue = rtValue
       withElvenAcurracy = true
-      rollTypeMessage = ` + ${rtValue} [elven]`
+      rollTypeMessage = ` + ${10} [elven]`
     }
     else if (html.find('[name=rollType]')[0].value === 'disadvantage') {
       rollTypeValue = -1 * rtValue
