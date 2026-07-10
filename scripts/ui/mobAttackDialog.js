@@ -706,8 +706,6 @@ export class MobAttackDialog extends FormApplication {
         mobAttackData.tripleCritical = html.find('[name="tripleCritical"]').prop("checked")
         mobAttackData.extraDice = html.find('[name="extraDice"]').prop("checked")
 
-        console.log(mobAttackData);
-
         mobAttackData.event = event
         if (game.settings.get(moduleName, 'mobRules') === 0) {
           rollMobAttack(mobAttackData)
@@ -729,6 +727,8 @@ export class MobAttackDialog extends FormApplication {
         selectedTokenIds.push({ tokenId: token.id, tokenUuid: token.document.uuid, actorId: token.actor.id })
       }
       let mobAttackData = await prepareMobAttack(html, selectedTokenIds, this.weapons, this.availableAttacks, this.targets, this.targetAC + game.settings.get(moduleName, 'savedArmorClassMod'), this.numSelected, this.monsters)
+      mobAttackData.tripleCritical = html.find('[name="tripleCritical"]').prop("checked")
+      mobAttackData.extraDice = html.find('[name="extraDice"]').prop("checked")
       let mobList = game.settings.get(moduleName, 'hiddenMobList')
 
       // Create macro
@@ -784,6 +784,9 @@ export class MobAttackDialog extends FormApplication {
       // make the macro respond to alt (option on MacOS) and ctrl (Command on MacOS) for advantage/disadvantage.
       let advKeyEvent = mobAttackData.withAdvantage
       let disadvKeyEvent = mobAttackData.withDisadvantage
+      let tripleCritKeyEvent = mobAttackData.tripleCritical
+      let extraDiceKeyEvent = mobAttackData.extraDice
+      
       if (!mobAttackData.withAdvantage && !mobAttackData.withDisadvantage) {
         advKeyEvent = `event.altKey`
         disadvKeyEvent = (game.settings.get(moduleName, 'disadvantageKeyBinding') === 0 ? `event.metaKey` : `event.ctrlKey`)
@@ -792,7 +795,7 @@ export class MobAttackDialog extends FormApplication {
       let macroData = {
         type: 'script',
         name: selectedName,
-        command: `MobAttacks.quickRoll({numSelected: ${mobAttackData.numSelected}, weaponLocators: ${JSON.stringify(mobAttackData.weaponLocators)}, attacks: ${JSON.stringify(mobAttackData.attacks)}, withAdvantage: ${advKeyEvent}, withDisadvantage: ${disadvKeyEvent}, rollTypeValue: ${mobAttackData.rollTypeValue}, rollTypeMessage: "${mobAttackData.rollTypeMessage}", endMobTurn: ${mobAttackData.endMobTurn}, monsters: ${JSON.stringify(mobAttackData.monsters)}})`,
+        command: `MobAttacks.quickRoll({numSelected: ${mobAttackData.numSelected}, weaponLocators: ${JSON.stringify(mobAttackData.weaponLocators)}, attacks: ${JSON.stringify(mobAttackData.attacks)}, withAdvantage: ${advKeyEvent}, withDisadvantage: ${disadvKeyEvent}, rollTypeValue: ${mobAttackData.rollTypeValue}, tripleCritical: ${tripleCritKeyEvent}, extraDice: ${extraDiceKeyEvent} ,rollTypeMessage: "${mobAttackData.rollTypeMessage}", endMobTurn: ${mobAttackData.endMobTurn}, monsters: ${JSON.stringify(mobAttackData.monsters)}})`,
         img: mobAttackData.weapons[key].img,
       }
 
