@@ -30,6 +30,9 @@ export async function rollMobAttackIndividually(data) {
       if (data.withAdvantage || (!data.withDisadvantage && data.event?.altKey)) {
         data.withAdvantage = true
         attackFormula = `2d20kh + ${finalAttackBonus}`
+      }else if(data.withElvenAcurracy){
+        data.withElvenAcurracy = true
+        attackFormula = `3d20kh + ${finalAttackBonus}`
       }
       else if (data.withDisadvantage || (!data.withAdvantage && (game.settings.get(moduleName, 'disadvantageKeyBinding') === 0 ? data.event?.metaKey : data.event?.ctrlKey))) {
         data.withDisadvantage = true
