@@ -8,6 +8,9 @@
     },
     {
       "name": "Stendarpaval (Lupusmalus)"
+    },
+    {
+      "name": "Jakeonly"
     }
   ],
   "languages": [
@@ -31,7 +34,7 @@
     }
   ],
   "url": "https://github.com/daft-develop/mob-attack-tool",
-  "version": "0.17.0",
+  "version": "0.17.1",
   "compatibility": {
     "minimum": "12",
     "verified": "14",
