@@ -45,6 +45,10 @@ export class MobAttackDialog extends FormApplication {
 
     this.rollTypeSelection = { advantage: '', normal: 'selected', disadvantage: '' }
 
+    //Crit Handler
+    this.tripleCriticalSelection = "checked";
+    this.extraDiceSelection = "checked";
+
     this.numTotalAttacks = 0
     this.totalAverageDamage = 0
     this.localUpdate = false
@@ -697,6 +701,11 @@ export class MobAttackDialog extends FormApplication {
           selectedTokenIds.push({ tokenId: token.id, tokenUuid: token.document.uuid, actorId: token.actor.id })
         }
         let mobAttackData = await prepareMobAttack(html, selectedTokenIds, this.weapons, this.availableAttacks, this.targets, this.targetAC + game.settings.get(moduleName, 'savedArmorClassMod'), this.numSelected, this.monsters)
+        
+        //Pasar informacion
+        mobAttackData.tripleCritical = html.find('[name="tripleCritical"]').prop("checked")
+        mobAttackData.extraDice = html.find('[name="extraDice"]').prop("checked")
+
         mobAttackData.event = event
         if (game.settings.get(moduleName, 'mobRules') === 0) {
           rollMobAttack(mobAttackData)

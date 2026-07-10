@@ -73,6 +73,18 @@
 				</div>
 
 				{{/if}}
+				<div class="form-group">
+					<label style="flex-grow: 5;">Triple Critical</label>
+					<div class="form-fields">
+						<input type="checkbox" name="tripleCritical" data-dtype="Boolean"/>
+					</div>
+				</div>
+				<div class="form-group">
+					<label style="flex-grow: 5;">ExtraDice</label>
+					<div class="form-fields">
+						<input type="checkbox" name="extraDice" data-dtype="Boolean"/>
+					</div>
+				</div>
 				<div class="mat-macro-export">
 					<label class="mat-label mat-col1">{{localize 'MAT.exportToMacro'}}: </label>
 					<button type="button" class="mat-label exportMobAttack" name="exportMobAttack"

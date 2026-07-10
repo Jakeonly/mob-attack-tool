@@ -251,12 +251,27 @@ export async function processIndividualDamageRolls(data, weaponData, finalAttack
           let damageRoll = new CONFIG.Dice.DamageRoll(diceFormula, { mod: attackData.ability == 'none' ? 0 : weaponData.actor.system.abilities[attackData.ability].mod }, { type: damageTypeLabels[0] })
 
           if (numCrits > 0) {
+            //Variables para 3x crit y extraDice
+            console.log(mobAttackData.tripleCritical);
+            console.log(mobAttackData.extraDice);
+            let extraDice = true
+            let extraCrit = true
             // Add critical damage dice on each successful attack, up to the number of crits
             let critDice = [], critDie
-            let damageRollDiceTerms = damageRoll.terms.filter(t => t.number > 0 && t.faces > 0)
+            let damageRollDiceTerms = damageRoll. terms.filter(t => t.number > 0 && t.faces > 0)
             for (let term of damageRollDiceTerms) {
               critDie = new FoundryDie({ number: term.number, faces: term.faces })
-              critDice.push(critDie)
+              if(extraCrit == true){
+                //Critico x3
+                critDie.number = critDie.number * 2;
+                if(extraDice == true){
+                  critDie.number++;
+                  extraDice = false;
+                }
+                critDice.push(critDie)
+              }else{
+                critDice.push(critDie)
+              }              
             }
             for (let i = 0; i < critDice.length; i++) {
               if (damageRollDiceTerms[i].faces === critDice[i].faces) {
