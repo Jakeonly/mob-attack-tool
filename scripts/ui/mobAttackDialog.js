@@ -731,6 +731,7 @@ export class MobAttackDialog extends FormApplication {
       let mobAttackData = await prepareMobAttack(html, selectedTokenIds, this.weapons, this.availableAttacks, this.targets, this.targetAC + game.settings.get(moduleName, 'savedArmorClassMod'), this.numSelected, this.monsters)
       mobAttackData.tripleCritical = html.find('[name="tripleCritical"]').prop("checked")
       mobAttackData.extraDice = html.find('[name="extraDice"]').prop("checked")
+      mobAttackData.doubleDamage = html.find('[name="doubleDamage"]').prop("checked")
       let mobList = game.settings.get(moduleName, 'hiddenMobList')
 
       // Create macro
@@ -789,6 +790,7 @@ export class MobAttackDialog extends FormApplication {
       let disadvKeyEvent = mobAttackData.withDisadvantage
       let tripleCritKeyEvent = mobAttackData.tripleCritical
       let extraDiceKeyEvent = mobAttackData.extraDice
+      let doubleDamageEvent = mobAttackData.doubleDamage
       
       if (!mobAttackData.withAdvantage && !mobAttackData.withDisadvantage) {
         advKeyEvent = `event.altKey`
@@ -798,7 +800,7 @@ export class MobAttackDialog extends FormApplication {
       let macroData = {
         type: 'script',
         name: selectedName,
-        command: `MobAttacks.quickRoll({numSelected: ${mobAttackData.numSelected}, weaponLocators: ${JSON.stringify(mobAttackData.weaponLocators)}, attacks: ${JSON.stringify(mobAttackData.attacks)}, withElvenAcurracy: ${elvenKeyEvent} ,withAdvantage: ${advKeyEvent}, withDisadvantage: ${disadvKeyEvent}, rollTypeValue: ${mobAttackData.rollTypeValue}, tripleCritical: ${tripleCritKeyEvent}, extraDice: ${extraDiceKeyEvent} ,rollTypeMessage: "${mobAttackData.rollTypeMessage}", endMobTurn: ${mobAttackData.endMobTurn}, monsters: ${JSON.stringify(mobAttackData.monsters)}})`,
+        command: `MobAttacks.quickRoll({numSelected: ${mobAttackData.numSelected}, weaponLocators: ${JSON.stringify(mobAttackData.weaponLocators)}, attacks: ${JSON.stringify(mobAttackData.attacks)}, withElvenAcurracy: ${elvenKeyEvent} ,withAdvantage: ${advKeyEvent}, withDisadvantage: ${disadvKeyEvent}, rollTypeValue: ${mobAttackData.rollTypeValue}, tripleCritical: ${tripleCritKeyEvent}, extraDice: ${extraDiceKeyEvent} , doubleDamage: ${doubleDamageEvent} ,rollTypeMessage: "${mobAttackData.rollTypeMessage}", endMobTurn: ${mobAttackData.endMobTurn}, monsters: ${JSON.stringify(mobAttackData.monsters)}})`,
         img: mobAttackData.weapons[key].img,
       }
 

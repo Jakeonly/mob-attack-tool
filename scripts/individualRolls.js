@@ -266,7 +266,7 @@ export async function processIndividualDamageRolls(data, weaponData, finalAttack
             let damageRollDiceTerms = damageRoll. terms.filter(t => t.number > 0 && t.faces > 0)
             for (let term of damageRollDiceTerms) {
               critDie = new FoundryDie({ number: term.number, faces: term.faces })
-              if(extraCrit == true){
+              if(extraCrit == true && extraDice == true){
                 //Critico x3
                 critDie.number = critDie.number * 2;
                 if(extraDice == true){
@@ -274,9 +274,16 @@ export async function processIndividualDamageRolls(data, weaponData, finalAttack
                   extraDice = false;
                 }
                 critDice.push(critDie)
+              }else if(extraCrit == true && extraDice == false){
+                critDie.number = critDie.number * 2;
+                critDice.push(critDie)
+              }else if(extraCrit == false && extraDice == true){
+                critDie.number++;
+                extraDice = false;
+                critDice.push(critDie)
               }else{
                 critDice.push(critDie)
-              }              
+              }             
             }
             for (let i = 0; i < critDice.length; i++) {
               if (damageRollDiceTerms[i].faces === critDice[i].faces) {
@@ -326,13 +333,32 @@ export async function processIndividualDamageRolls(data, weaponData, finalAttack
         let diceFormula = diceFormulas.join(' + ')
         let damageType = damageTypes.join(', ')
         let damageRoll = new CONFIG.Dice.DamageRoll(diceFormula, { mod: attackData.ability == 'none' ? 0 : weaponData.actor.system.abilities[attackData.ability].mod }, { type: damageTypeLabels[0] })
-
+        //==========================================================================CRITICOS ATAQUE SUMADO==============================================================/
         // Add critical damage dice
+        let extraDice = data.data.extraDice
+        let extraCrit = data.data.tripleCritical
         let critDice = [], critDie
         let damageRollDiceTerms = damageRoll.terms.filter(t => t.number > 0 && t.faces > 0)
         for (let term of damageRollDiceTerms) {
           critDie = new FoundryDie({ number: term.number, faces: term.faces })
-          critDice.push(critDie)
+          if(extraCrit == true && extraDice == true){
+                //Critico x3
+                critDie.number = critDie.number * 2;
+                if(extraDice == true){
+                  critDie.number++;
+                  extraDice = false;
+                }
+                critDice.push(critDie)
+              }else if(extraCrit == true && extraDice == false){
+                critDie.number = critDie.number * 2;
+                critDice.push(critDie)
+              }else if(extraCrit == false && extraDice == true){
+                critDie.number++;
+                extraDice = false;
+                critDice.push(critDie)
+              }else{
+                critDice.push(critDie)
+              }
         }
         await damageRoll.alter(numHitAttacks, 0, { multiplyNumeric: true })
         if (numCrits > 0) {
