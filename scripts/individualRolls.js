@@ -58,9 +58,11 @@ export async function rollMobAttackIndividually(data) {
       let critThreshold = 20
       if (weaponData.type === 'weapon' && weaponData.actor.getFlag('dnd5e', 'weaponCriticalThreshold') > 0) {
         critThreshold = weaponData.actor.getFlag('dnd5e', 'weaponCriticalThreshold')
+        console.log("critThreshold weapon: ", critThreshold);
       }
       else if (weaponData.type === 'spell' && weaponData.actor.getFlag('dnd5e', 'spellCriticalThreshold') > 0) {
         critThreshold = weaponData.actor.getFlag('dnd5e', 'spellCriticalThreshold')
+        console.log("critThreshold spell: ", critThreshold);
       }
 
       let tokenAttackList = []
@@ -221,9 +223,11 @@ export async function processIndividualDamageRolls(data, weaponData, finalAttack
   let critThreshold = 20
   if (weaponData.type === 'weapon' && weaponData.actor.getFlag('dnd5e', 'weaponCriticalThreshold') > 0) {
     critThreshold = weaponData.actor.getFlag('dnd5e', 'weaponCriticalThreshold')
+    console.log("critThreshold weapon: ", critThreshold);
   }
   else if (weaponData.type === 'spell' && weaponData.actor.getFlag('dnd5e', 'spellCriticalThreshold') > 0) {
     critThreshold = weaponData.actor.getFlag('dnd5e', 'spellCriticalThreshold')
+    console.log("critThreshold spell: ", critThreshold);
   }
 
   // Process attack and damage rolls

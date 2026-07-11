@@ -625,6 +625,55 @@ export function getDamageFormulaAndType(weaponData, isVersatile = false) {
   let damageTypes = []
   let damageTypeLabels = []
   let lengthIndex = 0
+  let hasEffect = false
+  //Effects handler
+
+  //Function of convert
+  function convertDamageString(str) {
+    return str
+        .split(/\s*\+\s*/)
+        .map(part => {
+            const match = part.match(/^(.+?)\[(.+)\]$/);
+
+            if (match) {
+                const [, formula, type] = match;
+                return [formula.trim(), type.trim().toLowerCase()];
+            }
+
+            // Si no tiene tipo de daño, usar un tipo vacío
+            return [part.trim(), ""];
+        });
+  }
+
+  let msakBonus = foundry.utils.getProperty(weaponData.actor, "system.bonuses.msak.damage");
+  let mwakBonus = foundry.utils.getProperty(weaponData.actor, "system.bonuses.mwak.damage");
+  let rsakBonus = foundry.utils.getProperty(weaponData.actor, "system.bonuses.rsak.damage");
+  let rwakBonus = foundry.utils.getProperty(weaponData.actor, "system.bonuses.rwak.damage");
+
+  if(msakBonus || mwakBonus || rsakBonus || rwakBonus){
+    hasEffect = true;
+  }
+
+  if(hasEffect){
+    const bonuses = [
+      foundry.utils.getProperty(weaponData.actor, "system.bonuses.msak.damage"),
+      foundry.utils.getProperty(weaponData.actor, "system.bonuses.mwak.damage"),
+      foundry.utils.getProperty(weaponData.actor, "system.bonuses.rsak.damage"),
+      foundry.utils.getProperty(weaponData.actor, "system.bonuses.rwak.damage")
+    ].filter(Boolean);
+  
+    const uniqueTerms = [...new Set(
+      bonuses
+        .flatMap(b => b.split(/\s*\+\s*/))
+        .map(t => t.trim())
+        .filter(Boolean)
+    )];
+  
+    const finalBonus = uniqueTerms.join(" + ");
+    let bonusFormated = convertDamageString(finalBonus);
+    attackData.damage.parts.push(...bonusFormated);
+  }
+  
   for (let diceFormulaParts of attackData.damage.parts) {
     damageTypeLabels.push(diceFormulaParts[1])
     damageTypes.push(diceFormulaParts[1].capitalize())
@@ -640,7 +689,7 @@ export function getDamageFormulaAndType(weaponData, isVersatile = false) {
     }
     else {
       // for non-spell damage formulas, the first available formula should add the magicalBonus, if it exists
-      let formula = (((isVersatile && lengthIndex === 0) ? attackData.damage.versatile : diceFormulaParts[0]).replace('@mod', attackData.ability == 'none' ? 0 : weaponData.actor.system.abilities[attackData.ability].mod))
+      let formula = (((isVersatile && lengthIndex === 0) ? attackData.damage.versatile : diceFormulaParts[0])).replace("@mod", attackData.ability === "none" ? 0 : weaponData.actor.system.abilities[attackData.ability].mod).replace(/@abilities\.([^.]+)\.mod/g, (_, ability) => weaponData.actor.system.abilities[ability]?.mod ?? 0);
       if (lengthIndex === 0 && weaponData.system.magicAvailable) {
         formula += '+ ' + weaponData.system.magicalBonus
       }
