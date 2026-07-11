@@ -27,11 +27,28 @@ export function getAttackData(item) {
     const attackActivity = getActivityFromItem(item) || {}
     attackData = { ...attackActivity }
     if (attackActivity.damage) {
+      const mainType = attackData.damage.parts.find(p => p.types.first())?.types.first() ?? '';
       attackData.damage = {
-        parts: attackData.damage.parts.map(p => [
-          p.formula + (p.base && !/@mod\b/.test(p.formula) ? ' + @mod' : ''),
-          p.types.first() ?? '',
-        ]),
+        parts: attackData.damage.parts.map(p => {
+          let formula = p.formula + (p.base && !/@mod\b/.test(p.formula) ? ' + @mod' : '')
+          let type = p.types.first() ?? mainType;
+      
+          if (type && !/\[.+\]$/.test(formula)) {
+            if (formula.includes('@mod')) {
+              formula = formula
+                .split(/\s*\+\s*/)
+                .map(part => `${part}[${type}]`)
+                .join(' + ')
+            } else {
+              formula = `${formula}[${type}]`
+            }
+          }
+      
+          return [
+            formula,
+            '',
+          ]
+        }),
       }
       if (item.system.properties.has('ver')) {
         const versatile = item.system.damage.versatile.clone(item.system.damage.versatile)
@@ -632,17 +649,7 @@ export function getDamageFormulaAndType(weaponData, isVersatile = false) {
   function convertDamageString(str) {
     return str
         .split(/\s*\+\s*/)
-        .map(part => {
-            const match = part.match(/^(.+?)\[(.+)\]$/);
-
-            if (match) {
-                const [, formula, type] = match;
-                return [formula.trim(), type.trim().toLowerCase()];
-            }
-
-            // Si no tiene tipo de daño, usar un tipo vacío
-            return [part.trim(), ""];
-        });
+        .map(part => [part.trim(), ""]);
   }
 
   let msakBonus = foundry.utils.getProperty(weaponData.actor, "system.bonuses.msak.damage");
@@ -673,6 +680,15 @@ export function getDamageFormulaAndType(weaponData, isVersatile = false) {
     let bonusFormated = convertDamageString(finalBonus);
     attackData.damage.parts.push(...bonusFormated);
   }
+
+  const mainType = attackData.damage.parts[0]?.[0].match(/\[([^\]]+)\]/)?.[1] ?? "";
+  attackData.damage.parts = attackData.damage.parts.map(([formula, type]) => {
+  if (!type && mainType && !/\[[^\]]+\]/.test(formula)) {
+    formula = `${formula}[${mainType}]`;
+  }
+  return [formula, ""];
+  });
+  console.log(attackData.damage.parts);
   
   for (let diceFormulaParts of attackData.damage.parts) {
     damageTypeLabels.push(diceFormulaParts[1])
@@ -691,7 +707,8 @@ export function getDamageFormulaAndType(weaponData, isVersatile = false) {
       // for non-spell damage formulas, the first available formula should add the magicalBonus, if it exists
       let formula = (((isVersatile && lengthIndex === 0) ? attackData.damage.versatile : diceFormulaParts[0])).replace("@mod", attackData.ability === "none" ? 0 : weaponData.actor.system.abilities[attackData.ability].mod).replace(/@abilities\.([^.]+)\.mod/g, (_, ability) => weaponData.actor.system.abilities[ability]?.mod ?? 0);
       if (lengthIndex === 0 && weaponData.system.magicAvailable) {
-        formula += '+ ' + weaponData.system.magicalBonus
+        const mainType = attackData.damage.parts[0][0].match(/\[([^\]]+)\]/)?.[1] ?? "";
+        formula += ` + ${weaponData.system.magicalBonus}${mainType ? `[${mainType}]` : ""}`;
       }
       diceFormulas.push(simplifyFormula(formula))
     }
