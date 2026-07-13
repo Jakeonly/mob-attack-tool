@@ -48,9 +48,7 @@ export class MobAttackDialog extends FormApplication {
     //Crit Handler
     this.tripleCriticalSelection = "checked";
     this.extraDiceSelection = "checked";
-    //doubleDamage Handler
-    this.doubleDamage = "checked";
-    
+
     this.numTotalAttacks = 0
     this.totalAverageDamage = 0
     this.localUpdate = false
@@ -733,6 +731,7 @@ export class MobAttackDialog extends FormApplication {
       mobAttackData.tripleCritical = html.find('[name="tripleCritical"]').prop("checked")
       mobAttackData.extraDice = html.find('[name="extraDice"]').prop("checked")
       mobAttackData.doubleDamage = html.find('[name="doubleDamage"]').prop("checked")
+      
       let mobList = game.settings.get(moduleName, 'hiddenMobList')
 
       // Create macro

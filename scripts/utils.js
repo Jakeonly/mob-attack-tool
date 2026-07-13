@@ -688,7 +688,6 @@ export function getDamageFormulaAndType(weaponData, isVersatile = false) {
   }
   return [formula, ""];
   });
-  console.log(attackData.damage.parts);
   
   for (let diceFormulaParts of attackData.damage.parts) {
     damageTypeLabels.push(diceFormulaParts[1])

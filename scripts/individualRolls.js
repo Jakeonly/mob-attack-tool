@@ -294,7 +294,22 @@ export async function processIndividualDamageRolls(data, weaponData, finalAttack
             numCrits--
           }
           damageRoll = await damageRoll.evaluate()
-
+          let doubleDamage = data.data.doubleDamage
+          if (doubleDamage) {
+          	for (const term of damageRoll.terms) {
+          		// Duplica los resultados de los dados
+          		if (term instanceof Die) {
+          			for (const result of term.results) {
+          				if (result.active) result.result *= 2;
+          			}
+          		}
+          
+          		// Duplica los modificadores numéricos
+          		if (term instanceof NumericTerm) {
+          			term.number *= 2;
+          		}
+          	}
+          }
           // Roll Dice so Nice dice
           if (game.modules.get('dice-so-nice')?.active && game.settings.get(moduleName, 'enableDiceSoNice')) {
             await game.dice3d.showForRoll(damageRoll, game.user, game.settings.get('core', 'rollMode') === 'publicroll' || game.settings.get('core', 'rollMode') === 'roll')
@@ -371,7 +386,22 @@ export async function processIndividualDamageRolls(data, weaponData, finalAttack
           }
         }
         damageRoll = await damageRoll.evaluate()
-
+        let doubleDamage = data.data.doubleDamage
+        if (doubleDamage) {
+        	for (const term of damageRoll.terms) {
+        		// Duplica los resultados de los dados
+        		if (term instanceof Die) {
+        			for (const result of term.results) {
+        				if (result.active) result.result *= 2;
+        			}
+        		}
+        
+        		// Duplica los modificadores numéricos
+        		if (term instanceof NumericTerm) {
+        			term.number *= 2;
+        		}
+        	}
+        }
         // Roll Dice so Nice dice
         if (game.modules.get('dice-so-nice')?.active && game.settings.get(moduleName, 'enableDiceSoNice')) {
           await game.dice3d.showForRoll(damageRoll, game.user, game.settings.get('core', 'rollMode') === 'publicroll' || game.settings.get('core', 'rollMode') === 'roll')
