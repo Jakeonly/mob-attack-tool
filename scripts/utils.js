@@ -319,8 +319,8 @@ export async function prepareMonsters(actorList, keepCheckboxes = false, oldMons
     let items = actor.items.contents
     for (let item of items) {
       const isAttack = systemEqualOrNewerThan('4.0.0')
-        ? item.system.activities?.some(a => a.type === 'attack' && a.damage?.parts?.length) && (item.type !== 'spell' || item.system.level === 0 || item.system.preparation.mode === 'atwill')
-        : item.type == 'weapon' || (item.type == 'spell' && (item.system.level === 0 || item.system.preparation.mode === 'atwill') && item.system.damage.parts.length > 0 && item.system.save.ability === '')
+        ? item.system.activities?.some(a => a.type === 'attack' && a.damage?.parts?.length) && (item.type !== 'spell' || item.system.level >= 0)
+        : item.type == 'weapon' || (item.type == 'spell' && item.system.level >= 0 && item.system.damage.parts.length > 0 && item.system.save.ability === '')
 
       if (isAttack) {
         if (weapons[item.id]?.id === item.id) {
@@ -621,6 +621,52 @@ export function getDamageFormulaAndType(weaponData, isVersatile = false) {
   let damageTypes = []
   let damageTypeLabels = []
   let lengthIndex = 0
+  let hasEffect = false
+
+  function convertDamageString(str) {
+    return str
+        .split(/\s*\+\s*/)
+        .map(part => [part.trim(), ''])
+  }
+
+  let msakBonus = foundry.utils.getProperty(weaponData.actor, 'system.bonuses.msak.damage')
+  let mwakBonus = foundry.utils.getProperty(weaponData.actor, 'system.bonuses.mwak.damage')
+  let rsakBonus = foundry.utils.getProperty(weaponData.actor, 'system.bonuses.rsak.damage')
+  let rwakBonus = foundry.utils.getProperty(weaponData.actor, 'system.bonuses.rwak.damage')
+
+  if (msakBonus || mwakBonus || rsakBonus || rwakBonus) {
+    hasEffect = true
+  }
+
+  if (hasEffect) {
+    const bonuses = [
+      foundry.utils.getProperty(weaponData.actor, 'system.bonuses.msak.damage'),
+      foundry.utils.getProperty(weaponData.actor, 'system.bonuses.mwak.damage'),
+      foundry.utils.getProperty(weaponData.actor, 'system.bonuses.rsak.damage'),
+      foundry.utils.getProperty(weaponData.actor, 'system.bonuses.rwak.damage'),
+    ].filter(Boolean)
+
+    const uniqueTerms = [...new Set(
+      bonuses
+        .flatMap(b => b.split(/\s*\+\s*/))
+        .map(t => t.trim())
+        .filter(Boolean)
+    )]
+
+    const finalBonus = uniqueTerms.join(' + ')
+    let bonusFormated = convertDamageString(finalBonus)
+    attackData.damage.parts.push(...bonusFormated)
+  }
+
+  const firstDamagePart = attackData.damage.parts[0]
+  const mainType = (firstDamagePart?.[1] || firstDamagePart?.[0].match(/\[([^\]]+)\]/)?.[1]) ?? ''
+  attackData.damage.parts = attackData.damage.parts.map(([formula, type]) => {
+    const resolvedType = type || formula.match(/\[([^\]]+)\]/)?.[1] || ''
+    if (!resolvedType && mainType && !/\[[^\]]+\]/.test(formula)) {
+      formula = `${formula}[${mainType}]`
+    }
+    return [formula, resolvedType]
+  });
   for (let diceFormulaParts of attackData.damage.parts) {
     damageTypeLabels.push(diceFormulaParts[1])
     damageTypes.push(diceFormulaParts[1].capitalize())
