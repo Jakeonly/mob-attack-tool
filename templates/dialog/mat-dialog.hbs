@@ -65,6 +65,7 @@
 				<div class="mat-rolltype">
 					<label class="mat-label mat-col1">{{localize 'MAT.selectRollType'}}: </label>
 					<select class="mat-label mat-col2" name="rollType">
+						<option value="elvenAcurracy" {{this.rollTypeSelection.elvenAcurracy}}>Elven Accuracy</option>
 						<option value="advantage" {{this.rollTypeSelection.advantage}}>{{localize 'Advantage'}}</option>
 						<option value="normal" {{this.rollTypeSelection.normal}}>{{localize 'Normal'}}</option>
 						<option value="disadvantage" {{this.rollTypeSelection.disadvantage}}>{{localize 'Disadvantage'}}
@@ -73,6 +74,11 @@
 				</div>
 
 				{{/if}}
+				<div class="mat-rolltype">
+					<label class="mat-label mat-col1"><input type="checkbox" name="tripleCritical" {{this.tripleCriticalSelection}}> Triple Critical</label>
+					<label class="mat-label mat-col2"><input type="checkbox" name="extraDice" {{this.extraDiceSelection}}> Extra Dice</label>
+					<label class="mat-label mat-col2"><input type="checkbox" name="doubleDamage" {{this.doubleDamageSelection}}> Double Damage</label>
+				</div>
 				<div class="mat-macro-export">
 					<label class="mat-label mat-col1">{{localize 'MAT.exportToMacro'}}: </label>
 					<button type="button" class="mat-label exportMobAttack" name="exportMobAttack"

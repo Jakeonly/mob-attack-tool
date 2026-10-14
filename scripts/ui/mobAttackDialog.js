@@ -43,7 +43,11 @@ export class MobAttackDialog extends FormApplication {
     this.collapsibleCSS = 'mat-collapsible-content-closed'
     this.collapsiblePlusMinus = 'plus'
 
-    this.rollTypeSelection = { advantage: '', normal: 'selected', disadvantage: '' }
+    this.rollTypeSelection = { elvenAcurracy: '', advantage: '', normal: 'selected', disadvantage: '' }
+
+    this.tripleCriticalSelection = 'checked'
+    this.extraDiceSelection = 'checked'
+    this.doubleDamageSelection = ''
 
     this.numTotalAttacks = 0
     this.totalAverageDamage = 0
@@ -239,6 +243,9 @@ export class MobAttackDialog extends FormApplication {
       numTotalAttacks: this.numTotalAttacks,
       totalAverageDamage: this.totalAverageDamage,
       rollTypeSelection: this.rollTypeSelection,
+      tripleCriticalSelection: this.tripleCriticalSelection,
+      extraDiceSelection: this.extraDiceSelection,
+      doubleDamageSelection: this.doubleDamageSelection,
     }
     data.isGM = game.user.isGM
 
@@ -697,6 +704,18 @@ export class MobAttackDialog extends FormApplication {
           selectedTokenIds.push({ tokenId: token.id, tokenUuid: token.document.uuid, actorId: token.actor.id })
         }
         let mobAttackData = await prepareMobAttack(html, selectedTokenIds, this.weapons, this.availableAttacks, this.targets, this.targetAC + game.settings.get(moduleName, 'savedArmorClassMod'), this.numSelected, this.monsters)
+
+        const rollTypeValue = html.find('[name="rollType"]')[0]?.value ?? 'normal'
+        mobAttackData.withElvenAcurracy = rollTypeValue === 'elvenAcurracy'
+        mobAttackData.withAdvantage = rollTypeValue === 'advantage'
+        mobAttackData.withDisadvantage = rollTypeValue === 'disadvantage'
+
+        mobAttackData.data = {
+          tripleCritical: html.find('[name="tripleCritical"]').prop('checked'),
+          extraDice: html.find('[name="extraDice"]').prop('checked'),
+          doubleDamage: html.find('[name="doubleDamage"]').prop('checked'),
+        }
+
         mobAttackData.event = event
         const mobRulesSetting = game.settings.get(moduleName, 'mobRules')
         if (game.settings.get(moduleName, 'mobRules') === 'individual') {
@@ -719,6 +738,16 @@ export class MobAttackDialog extends FormApplication {
         selectedTokenIds.push({ tokenId: token.id, tokenUuid: token.document.uuid, actorId: token.actor.id })
       }
       let mobAttackData = await prepareMobAttack(html, selectedTokenIds, this.weapons, this.availableAttacks, this.targets, this.targetAC + game.settings.get(moduleName, 'savedArmorClassMod'), this.numSelected, this.monsters)
+      const rollTypeValue = html.find('[name="rollType"]')[0]?.value ?? 'normal'
+      mobAttackData.withElvenAcurracy = rollTypeValue === 'elvenAcurracy'
+      mobAttackData.withAdvantage = rollTypeValue === 'advantage'
+      mobAttackData.withDisadvantage = rollTypeValue === 'disadvantage'
+
+      const damageOptions = {
+        tripleCritical: html.find('[name="tripleCritical"]').prop('checked'),
+        extraDice: html.find('[name="extraDice"]').prop('checked'),
+        doubleDamage: html.find('[name="doubleDamage"]').prop('checked'),
+      }
       let mobList = game.settings.get(moduleName, 'hiddenMobList')
 
       // Create macro
@@ -772,9 +801,10 @@ export class MobAttackDialog extends FormApplication {
 
       // if macro not exported explicitly with advantage/disadvantage,
       // make the macro respond to alt (option on MacOS) and ctrl (Command on MacOS) for advantage/disadvantage.
+      let elvenKeyEvent = mobAttackData.withElvenAcurracy
       let advKeyEvent = mobAttackData.withAdvantage
       let disadvKeyEvent = mobAttackData.withDisadvantage
-      if (!mobAttackData.withAdvantage && !mobAttackData.withDisadvantage) {
+      if (!mobAttackData.withElvenAcurracy && !mobAttackData.withAdvantage && !mobAttackData.withDisadvantage) {
         advKeyEvent = `event.altKey`
         disadvKeyEvent = (game.settings.get(moduleName, 'disadvantageKeyBinding') === 0 ? `event.metaKey` : `event.ctrlKey`)
       }
@@ -782,7 +812,7 @@ export class MobAttackDialog extends FormApplication {
       let macroData = {
         type: 'script',
         name: selectedName,
-        command: `MobAttacks.quickRoll({numSelected: ${mobAttackData.numSelected}, weaponLocators: ${JSON.stringify(mobAttackData.weaponLocators)}, attacks: ${JSON.stringify(mobAttackData.attacks)}, withAdvantage: ${advKeyEvent}, withDisadvantage: ${disadvKeyEvent}, rollTypeValue: ${mobAttackData.rollTypeValue}, rollTypeMessage: "${mobAttackData.rollTypeMessage}", endMobTurn: ${mobAttackData.endMobTurn}, monsters: ${JSON.stringify(mobAttackData.monsters)}})`,
+        command: `MobAttacks.quickRoll({numSelected: ${mobAttackData.numSelected}, weaponLocators: ${JSON.stringify(mobAttackData.weaponLocators)}, attacks: ${JSON.stringify(mobAttackData.attacks)}, withElvenAcurracy: ${elvenKeyEvent}, withAdvantage: ${advKeyEvent}, withDisadvantage: ${disadvKeyEvent}, rollTypeValue: ${mobAttackData.rollTypeValue}, data: ${JSON.stringify(damageOptions)}, rollTypeMessage: "${mobAttackData.rollTypeMessage}", endMobTurn: ${mobAttackData.endMobTurn}, monsters: ${JSON.stringify(mobAttackData.monsters)}})`,
         img: mobAttackData.weapons[key].img,
       }
 
@@ -808,11 +838,32 @@ export class MobAttackDialog extends FormApplication {
         this.collapsiblePlusMinus = 'plus'
         this.collapsibleCSS = 'mat-collapsible-content-closed'
       }
-      let rollTypeOptions = { advantage: '', normal: '', disadvantage: '' }
+      let rollTypeOptions = { elvenAcurracy: '', advantage: '', normal: '', disadvantage: '' }
       rollTypeOptions[html.find('[name=rollType]')[0]?.value ?? 'normal'] = 'selected'
       this.rollTypeSelection = rollTypeOptions
+      this.tripleCriticalSelection = html.find('[name="tripleCritical"]').prop('checked') ? 'checked' : ''
+      this.extraDiceSelection = html.find('[name="extraDice"]').prop('checked') ? 'checked' : ''
+      this.doubleDamageSelection = html.find('[name="doubleDamage"]').prop('checked') ? 'checked' : ''
       this.localUpdate = true
       this.render(true)
+    })
+
+    html.on('change', '[name="rollType"]', (event) => {
+      let rollTypeOptions = { elvenAcurracy: '', advantage: '', normal: '', disadvantage: '' }
+      rollTypeOptions[event.currentTarget.value] = 'selected'
+      this.rollTypeSelection = rollTypeOptions
+    })
+
+    html.on('change', '[name="tripleCritical"]', (event) => {
+      this.tripleCriticalSelection = event.currentTarget.checked ? 'checked' : ''
+    })
+
+    html.on('change', '[name="extraDice"]', (event) => {
+      this.extraDiceSelection = event.currentTarget.checked ? 'checked' : ''
+    })
+
+    html.on('change', '[name="doubleDamage"]', (event) => {
+      this.doubleDamageSelection = event.currentTarget.checked ? 'checked' : ''
     })
   }
 

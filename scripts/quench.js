@@ -294,6 +294,35 @@ export function initQuenchTests() {
               sefrisActor.system.abilities.cha.value = originalCha
             }
           })
+          it('should not scale actor bonus damage on spells', function () {
+            const sefrisActor = canvas.tokens.placeables.find(t => t.name == 'Sefris').actor
+            const eldritch_blast = sefrisActor.items.find(i => i.name == 'Eldritch Blast')
+            const originalInt = sefrisActor.system.abilities.int.value
+            const originalWis = sefrisActor.system.abilities.wis.value
+            const originalCha = sefrisActor.system.abilities.cha.value
+            const originalMwakDamage = foundry.utils.getProperty(sefrisActor, 'system.bonuses.mwak.damage')
+
+            sefrisActor.system.abilities.int.value = 30
+            sefrisActor.system.abilities.wis.value = 8
+            sefrisActor.system.abilities.cha.value = 20
+            foundry.utils.setProperty(sefrisActor, 'system.bonuses.mwak.damage', '1d4')
+
+            try {
+              [damage, type, label] = getDamageFormulaAndType(eldritch_blast, false)
+              damage[0].should.equal('1d20')
+              damage[1].should.equal('1d4')
+              type[0].should.equal('Force')
+              type[1].should.equal('Force')
+              label[0].should.equal('force')
+              label[1].should.equal('force')
+            }
+            finally {
+              sefrisActor.system.abilities.int.value = originalInt
+              sefrisActor.system.abilities.wis.value = originalWis
+              sefrisActor.system.abilities.cha.value = originalCha
+              foundry.utils.setProperty(sefrisActor, 'system.bonuses.mwak.damage', originalMwakDamage)
+            }
+          })
           it('should handle manually set weapon ability (CHA)', function () {
             const weapon = testItems.find(i => i.name == 'Handaxe (CHA)');
             [damage, type, label] = getDamageFormulaAndType(weapon, false)

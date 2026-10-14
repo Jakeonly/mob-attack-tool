@@ -31,6 +31,10 @@ export async function rollMobAttackIndividually(data) {
         data.withAdvantage = true
         attackFormula = `2d20kh + ${finalAttackBonus}`
       }
+      else if (data.withElvenAcurracy) {
+        data.withElvenAcurracy = true
+        attackFormula = `3d20kh + ${finalAttackBonus}`
+      }
       else if (data.withDisadvantage || (!data.withAdvantage && (game.settings.get(moduleName, 'disadvantageKeyBinding') === 0 ? data.event?.metaKey : data.event?.ctrlKey))) {
         data.withDisadvantage = true
         attackFormula = `2d20kl + ${finalAttackBonus}`
@@ -218,9 +222,11 @@ export async function processIndividualDamageRolls(data, weaponData, finalAttack
   let critThreshold = 20
   if (weaponData.type === 'weapon' && weaponData.actor.getFlag('dnd5e', 'weaponCriticalThreshold') > 0) {
     critThreshold = weaponData.actor.getFlag('dnd5e', 'weaponCriticalThreshold')
+    console.log('critThreshold weapon: ', critThreshold)
   }
   else if (weaponData.type === 'spell' && weaponData.actor.getFlag('dnd5e', 'spellCriticalThreshold') > 0) {
     critThreshold = weaponData.actor.getFlag('dnd5e', 'spellCriticalThreshold')
+    console.log('critThreshold spell: ', critThreshold)
   }
 
   // Process attack and damage rolls
@@ -237,6 +243,7 @@ export async function processIndividualDamageRolls(data, weaponData, finalAttack
   }
 
   const FoundryDie = foundry.dice?.terms?.Die || Die
+  const FoundryNumericTerm = foundry.dice?.terms?.NumericTerm || globalThis.NumericTerm || class {}
   const attackData = getAttackData(weaponData)
 
   if (numHitAttacks != 0) {
@@ -251,12 +258,33 @@ export async function processIndividualDamageRolls(data, weaponData, finalAttack
           let damageRoll = new CONFIG.Dice.DamageRoll(diceFormula, { mod: attackData.ability == 'none' ? 0 : weaponData.actor.system.abilities[attackData.ability].mod }, { type: damageTypeLabels[0] })
 
           if (numCrits > 0) {
+            let extraDice = data.data.extraDice
+            let extraCrit = data.data.tripleCritical
             // Add critical damage dice on each successful attack, up to the number of crits
             let critDice = [], critDie
             let damageRollDiceTerms = damageRoll.terms.filter(t => t.number > 0 && t.faces > 0)
             for (let term of damageRollDiceTerms) {
               critDie = new FoundryDie({ number: term.number, faces: term.faces })
-              critDice.push(critDie)
+              if (extraCrit == true && extraDice == true) {
+                critDie.number = critDie.number * 2
+                if (extraDice == true) {
+                  critDie.number++
+                  extraDice = false
+                }
+                critDice.push(critDie)
+              }
+              else if (extraCrit == true && extraDice == false) {
+                critDie.number = critDie.number * 2
+                critDice.push(critDie)
+              }
+              else if (extraCrit == false && extraDice == true) {
+                critDie.number++
+                extraDice = false
+                critDice.push(critDie)
+              }
+              else {
+                critDice.push(critDie)
+              }
             }
             for (let i = 0; i < critDice.length; i++) {
               if (damageRollDiceTerms[i].faces === critDice[i].faces) {
@@ -267,6 +295,23 @@ export async function processIndividualDamageRolls(data, weaponData, finalAttack
             numCrits--
           }
           damageRoll = await damageRoll.evaluate()
+
+          const originalDamageTotal = damageRoll.total
+          let doubleDamage = data.data.doubleDamage
+          if (doubleDamage) {
+            for (const term of damageRoll.terms) {
+              if (term instanceof FoundryDie) {
+                for (const result of term.results) {
+                  if (result.active) result.result *= 2
+                }
+              }
+
+              if (term instanceof FoundryNumericTerm) {
+                term.number *= 2
+              }
+            }
+            damageRoll._total = originalDamageTotal * 2
+          }
 
           // Roll Dice so Nice dice
           if (game.modules.get('dice-so-nice')?.active && game.settings.get(moduleName, 'enableDiceSoNice')) {
@@ -308,11 +353,33 @@ export async function processIndividualDamageRolls(data, weaponData, finalAttack
         let damageRoll = new CONFIG.Dice.DamageRoll(diceFormula, { mod: attackData.ability == 'none' ? 0 : weaponData.actor.system.abilities[attackData.ability].mod }, { type: damageTypeLabels[0] })
 
         // Add critical damage dice
+        let extraDice = data.data.extraDice
+        let extraCrit = data.data.tripleCritical
         let critDice = [], critDie
         let damageRollDiceTerms = damageRoll.terms.filter(t => t.number > 0 && t.faces > 0)
         for (let term of damageRollDiceTerms) {
           critDie = new FoundryDie({ number: term.number, faces: term.faces })
-          critDice.push(critDie)
+          if (extraCrit == true && extraDice == true) {
+            //Critico x3
+            critDie.number = critDie.number * 2
+            if (extraDice == true) {
+              critDie.number++
+              extraDice = false
+            }
+            critDice.push(critDie)
+          }
+          else if (extraCrit == true && extraDice == false) {
+            critDie.number = critDie.number * 2
+            critDice.push(critDie)
+          }
+          else if (extraCrit == false && extraDice == true) {
+            critDie.number++
+            extraDice = false
+            critDice.push(critDie)
+          }
+          else {
+            critDice.push(critDie)
+          }
         }
         await damageRoll.alter(numHitAttacks, 0, { multiplyNumeric: true })
         if (numCrits > 0) {
@@ -444,6 +511,22 @@ export async function processIndividualDamageRolls(data, weaponData, finalAttack
         }
         else {
           damageRoll = await damageRoll.evaluate()
+          const originalDamageTotal = damageRoll.total
+          let doubleDamage = data.data.doubleDamage
+          if (doubleDamage) {
+            for (const term of damageRoll.terms) {
+              if (term instanceof FoundryDie) {
+                for (const result of term.results) {
+                  if (result.active) result.result *= 2
+                }
+              }
+
+              if (term instanceof FoundryNumericTerm) {
+                term.number *= 2
+              }
+            }
+            damageRoll._total = originalDamageTotal * 2
+          }
           await damageRoll.toMessage(
             {
               flavor: `${weaponData.name} - ${game.i18n.localize('Damage Roll')} (${damageType})${(numCrits > 0) ? ` (${game.i18n.localize('MAT.critIncluded')})` : ``}`,

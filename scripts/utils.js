@@ -638,6 +638,28 @@ export function getDamageFormulaAndType(weaponData, isVersatile = false) {
     hasEffect = true
   }
 
+  const firstDamagePart = attackData.damage.parts[0]
+  const mainType = (firstDamagePart?.[1] || firstDamagePart?.[0].match(/\[([^\]]+)\]/)?.[1]) ?? ''
+  const baseDamageParts = attackData.damage.parts.map(([formula, type]) => {
+    const resolvedType = type || formula.match(/\[([^\]]+)\]/)?.[1] || ''
+    if (!resolvedType && mainType && !/\[[^\]]+\]/.test(formula)) {
+      formula = `${formula}[${mainType}]`
+    }
+    return [formula, resolvedType]
+  });
+
+  const spellDamageStepIncrease = weaponData.type == 'spell' ? getSpellDamageStepIncrease(weaponData.actor) : 0
+  let damageParts = baseDamageParts
+  if (spellDamageStepIncrease > 0) {
+    if (attackData.damage.versatile) {
+      attackData.damage.versatile = increaseDamageDieDenominations(attackData.damage.versatile, spellDamageStepIncrease)
+    }
+    damageParts = damageParts.map(([formula, type]) => [
+      increaseDamageDieDenominations(formula, spellDamageStepIncrease),
+      type,
+    ])
+  }
+
   if (hasEffect) {
     const bonuses = [
       foundry.utils.getProperty(weaponData.actor, 'system.bonuses.msak.damage'),
@@ -654,30 +676,11 @@ export function getDamageFormulaAndType(weaponData, isVersatile = false) {
     )]
 
     const finalBonus = uniqueTerms.join(' + ')
-    let bonusFormated = convertDamageString(finalBonus)
-    attackData.damage.parts.push(...bonusFormated)
+    const bonusFormated = convertDamageString(finalBonus)
+    damageParts.push(...bonusFormated.map(([formula, type]) => [formula, type || mainType]))
   }
 
-  const firstDamagePart = attackData.damage.parts[0]
-  const mainType = (firstDamagePart?.[1] || firstDamagePart?.[0].match(/\[([^\]]+)\]/)?.[1]) ?? ''
-  attackData.damage.parts = attackData.damage.parts.map(([formula, type]) => {
-    const resolvedType = type || formula.match(/\[([^\]]+)\]/)?.[1] || ''
-    if (!resolvedType && mainType && !/\[[^\]]+\]/.test(formula)) {
-      formula = `${formula}[${mainType}]`
-    }
-    return [formula, resolvedType]
-  });
-
-  const spellDamageStepIncrease = weaponData.type == 'spell' ? getSpellDamageStepIncrease(weaponData.actor) : 0
-  if (spellDamageStepIncrease > 0) {
-    if (attackData.damage.versatile) {
-      attackData.damage.versatile = increaseDamageDieDenominations(attackData.damage.versatile, spellDamageStepIncrease)
-    }
-    attackData.damage.parts = attackData.damage.parts.map(([formula, type]) => [
-      increaseDamageDieDenominations(formula, spellDamageStepIncrease),
-      type,
-    ])
-  }
+  attackData.damage.parts = damageParts
 
   for (let diceFormulaParts of attackData.damage.parts) {
     damageTypeLabels.push(diceFormulaParts[1])
