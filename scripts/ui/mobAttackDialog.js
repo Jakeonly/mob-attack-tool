@@ -45,8 +45,8 @@ export class MobAttackDialog extends FormApplication {
 
     this.rollTypeSelection = { elvenAcurracy: '', advantage: '', normal: 'selected', disadvantage: '' }
 
-    this.tripleCriticalSelection = 'checked'
-    this.extraDiceSelection = 'checked'
+    this.tripleCriticalSelection = ''
+    this.extraDiceSelection = ''
     this.doubleDamageSelection = ''
 
     this.numTotalAttacks = 0
@@ -194,11 +194,12 @@ export class MobAttackDialog extends FormApplication {
     // calculate total number of attacks and average damage
     this.numTotalAttacks = 0
     this.totalAverageDamage = 0
+    const doubleDamageMultiplier = this.doubleDamageSelection === 'checked' ? 2 : 1
     for (let [monsterKey, monsterData] of Object.entries(this.monsters)) {
       for (let [, weaponData] of Object.entries(monsterData.weapons)) {
         if (weaponData.useButtonValue === `checked`) {
           this.numTotalAttacks += weaponData.numAttack * this.monsters[monsterKey].amount
-          this.totalAverageDamage += weaponData.numAttack * weaponData.averageDamage * this.monsters[monsterKey].amount
+          this.totalAverageDamage += weaponData.numAttack * weaponData.averageDamage * this.monsters[monsterKey].amount * doubleDamageMultiplier
         }
       }
     }
@@ -215,7 +216,7 @@ export class MobAttackDialog extends FormApplication {
         let targetTotalNumAttacks = this.targets[i].weapons.length
         let targetTotalAverageDamage = 0
         for (let weapon of this.targets[i].weapons) {
-          targetTotalAverageDamage += weapon.averageDamage
+          targetTotalAverageDamage += weapon.averageDamage * doubleDamageMultiplier
         }
         this.targets[i].targetTotalNumAttacks = targetTotalNumAttacks
         this.targets[i].targetTotalAverageDamage = targetTotalAverageDamage
@@ -710,11 +711,9 @@ export class MobAttackDialog extends FormApplication {
         mobAttackData.withAdvantage = rollTypeValue === 'advantage'
         mobAttackData.withDisadvantage = rollTypeValue === 'disadvantage'
 
-        mobAttackData.data = {
-          tripleCritical: html.find('[name="tripleCritical"]').prop('checked'),
-          extraDice: html.find('[name="extraDice"]').prop('checked'),
-          doubleDamage: html.find('[name="doubleDamage"]').prop('checked'),
-        }
+        mobAttackData.tripleCritical = html.find('[name="tripleCritical"]').prop('checked')
+        mobAttackData.extraDice = html.find('[name="extraDice"]').prop('checked')
+        mobAttackData.doubleDamage = html.find('[name="doubleDamage"]').prop('checked')
 
         mobAttackData.event = event
         const mobRulesSetting = game.settings.get(moduleName, 'mobRules')
@@ -812,7 +811,7 @@ export class MobAttackDialog extends FormApplication {
       let macroData = {
         type: 'script',
         name: selectedName,
-        command: `MobAttacks.quickRoll({numSelected: ${mobAttackData.numSelected}, weaponLocators: ${JSON.stringify(mobAttackData.weaponLocators)}, attacks: ${JSON.stringify(mobAttackData.attacks)}, withElvenAcurracy: ${elvenKeyEvent}, withAdvantage: ${advKeyEvent}, withDisadvantage: ${disadvKeyEvent}, rollTypeValue: ${mobAttackData.rollTypeValue}, data: ${JSON.stringify(damageOptions)}, rollTypeMessage: "${mobAttackData.rollTypeMessage}", endMobTurn: ${mobAttackData.endMobTurn}, monsters: ${JSON.stringify(mobAttackData.monsters)}})`,
+        command: `MobAttacks.quickRoll({numSelected: ${mobAttackData.numSelected}, weaponLocators: ${JSON.stringify(mobAttackData.weaponLocators)}, attacks: ${JSON.stringify(mobAttackData.attacks)}, withElvenAcurracy: ${elvenKeyEvent}, withAdvantage: ${advKeyEvent}, withDisadvantage: ${disadvKeyEvent}, rollTypeValue: ${mobAttackData.rollTypeValue}, tripleCritical: ${damageOptions.tripleCritical}, extraDice: ${damageOptions.extraDice}, doubleDamage: ${damageOptions.doubleDamage}, rollTypeMessage: "${mobAttackData.rollTypeMessage}", endMobTurn: ${mobAttackData.endMobTurn}, monsters: ${JSON.stringify(mobAttackData.monsters)}})`,
         img: mobAttackData.weapons[key].img,
       }
 
@@ -856,14 +855,20 @@ export class MobAttackDialog extends FormApplication {
 
     html.on('change', '[name="tripleCritical"]', (event) => {
       this.tripleCriticalSelection = event.currentTarget.checked ? 'checked' : ''
+      this.localUpdate = true
+      this.render(true)
     })
 
     html.on('change', '[name="extraDice"]', (event) => {
       this.extraDiceSelection = event.currentTarget.checked ? 'checked' : ''
+      this.localUpdate = true
+      this.render(true)
     })
 
     html.on('change', '[name="doubleDamage"]', (event) => {
       this.doubleDamageSelection = event.currentTarget.checked ? 'checked' : ''
+      this.localUpdate = true
+      this.render(true)
     })
   }
 

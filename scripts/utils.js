@@ -27,11 +27,26 @@ export function getAttackData(item) {
     const attackActivity = getActivityFromItem(item) || {}
     attackData = { ...attackActivity }
     if (attackActivity.damage) {
+      const mainType = attackData.damage.parts.find(p => p.types.first())?.types.first() ?? ''
       attackData.damage = {
-        parts: attackData.damage.parts.map(p => [
-          p.formula + (p.base && !/@mod\b/.test(p.formula) ? ' + @mod' : ''),
-          p.types.first() ?? '',
-        ]),
+        parts: attackData.damage.parts.map(p => {
+          let formula = p.formula + (p.base && !/@mod\b/.test(p.formula) ? ' + @mod' : '')
+          const type = p.types.first() ?? mainType
+
+          if (type && !/\[[^\]]+\]$/.test(formula)) {
+            if (formula.includes('@mod')) {
+              formula = formula
+                .split(/\s*\+\s*/)
+                .map(part => `${part}[${type}]`)
+                .join(' + ')
+            }
+            else {
+              formula = `${formula}[${type}]`
+            }
+          }
+
+          return [formula, type]
+        }),
       }
       if (item.system.properties.has('ver')) {
         const versatile = item.system.damage.versatile.clone(item.system.damage.versatile)
@@ -489,6 +504,7 @@ export async function prepareMobAttack(html, selectedTokenIds, weapons, availabl
   }
   let withAdvantage = false
   let withDisadvantage = false
+  let withElvenAcurracy = false
   let rollTypeValue = 0
   let rollTypeMessage = ``
   if (game.settings.get(moduleName, 'askRollType')) {
@@ -497,6 +513,10 @@ export async function prepareMobAttack(html, selectedTokenIds, weapons, availabl
       rollTypeValue = rtValue
       withAdvantage = true
       rollTypeMessage = ` + ${rtValue} [adv]`
+    }else if (html.find('[name=rollType]')[0].value === 'elvenAcurracy') {
+      rollTypeValue = rtValue
+      withElvenAcurracy = true
+      rollTypeMessage = ` + ${10} [elven]`
     }
     else if (html.find('[name=rollType]')[0].value === 'disadvantage') {
       rollTypeValue = -1 * rtValue
@@ -514,6 +534,7 @@ export async function prepareMobAttack(html, selectedTokenIds, weapons, availabl
     weapons,
     attacks,
     withAdvantage,
+    withElvenAcurracy,
     withDisadvantage,
     rollTypeValue,
     rollTypeMessage,

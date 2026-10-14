@@ -258,8 +258,8 @@ export async function processIndividualDamageRolls(data, weaponData, finalAttack
           let damageRoll = new CONFIG.Dice.DamageRoll(diceFormula, { mod: attackData.ability == 'none' ? 0 : weaponData.actor.system.abilities[attackData.ability].mod }, { type: damageTypeLabels[0] })
 
           if (numCrits > 0) {
-            let extraDice = data.data.extraDice
-            let extraCrit = data.data.tripleCritical
+            let extraDice = data.extraDice ?? data.data?.extraDice
+            let extraCrit = data.tripleCritical ?? data.data?.tripleCritical
             // Add critical damage dice on each successful attack, up to the number of crits
             let critDice = [], critDie
             let damageRollDiceTerms = damageRoll.terms.filter(t => t.number > 0 && t.faces > 0)
@@ -297,7 +297,7 @@ export async function processIndividualDamageRolls(data, weaponData, finalAttack
           damageRoll = await damageRoll.evaluate()
 
           const originalDamageTotal = damageRoll.total
-          let doubleDamage = data.data.doubleDamage
+          let doubleDamage = data.doubleDamage ?? data.data?.doubleDamage
           if (doubleDamage) {
             for (const term of damageRoll.terms) {
               if (term instanceof FoundryDie) {
@@ -353,8 +353,8 @@ export async function processIndividualDamageRolls(data, weaponData, finalAttack
         let damageRoll = new CONFIG.Dice.DamageRoll(diceFormula, { mod: attackData.ability == 'none' ? 0 : weaponData.actor.system.abilities[attackData.ability].mod }, { type: damageTypeLabels[0] })
 
         // Add critical damage dice
-        let extraDice = data.data.extraDice
-        let extraCrit = data.data.tripleCritical
+        let extraDice = data.extraDice ?? data.data?.extraDice
+        let extraCrit = data.tripleCritical ?? data.data?.tripleCritical
         let critDice = [], critDie
         let damageRollDiceTerms = damageRoll.terms.filter(t => t.number > 0 && t.faces > 0)
         for (let term of damageRollDiceTerms) {
@@ -392,6 +392,23 @@ export async function processIndividualDamageRolls(data, weaponData, finalAttack
           }
         }
         damageRoll = await damageRoll.evaluate()
+
+        const originalDamageTotal = damageRoll.total
+          let doubleDamage = data.doubleDamage ?? data.data?.doubleDamage
+          if (doubleDamage) {
+            for (const term of damageRoll.terms) {
+              if (term instanceof FoundryDie) {
+                for (const result of term.results) {
+                  if (result.active) result.result *= 2
+                }
+              }
+
+              if (term instanceof FoundryNumericTerm) {
+                term.number *= 2
+              }
+            }
+            damageRoll._total = originalDamageTotal * 2
+          }
 
         // Roll Dice so Nice dice
         if (game.modules.get('dice-so-nice')?.active && game.settings.get(moduleName, 'enableDiceSoNice')) {
@@ -512,7 +529,7 @@ export async function processIndividualDamageRolls(data, weaponData, finalAttack
         else {
           damageRoll = await damageRoll.evaluate()
           const originalDamageTotal = damageRoll.total
-          let doubleDamage = data.data.doubleDamage
+          let doubleDamage = data.doubleDamage ?? data.data?.doubleDamage
           if (doubleDamage) {
             for (const term of damageRoll.terms) {
               if (term instanceof FoundryDie) {
