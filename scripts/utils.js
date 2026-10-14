@@ -4,6 +4,37 @@ import { getMultiattackFromActor } from './multiattack.js'
 
 const { getProperty, duplicate } = foundry.utils
 
+// Damage type chosen by the user for damage parts that allow several types
+// keyed by actor id + item id, then by damage part index
+const damageTypeSelections = new Map()
+
+function getDamageTypeSelectionKey(item) {
+  return `${item.actor?.id ?? ''}.${item.id}`
+}
+
+/**
+ * Get the damage type selected for a damage part, falling back to the first available type
+ * @param {Item5e} item a weapon/spell held by an actor
+ * @param {Number} partIndex index of the damage part
+ * @param {string[]} types damage types available for that part
+ * @returns the selected damage type
+ */
+export function getSelectedDamageType(item, partIndex, types) {
+  const selected = damageTypeSelections.get(getDamageTypeSelectionKey(item))?.[partIndex]
+  return types.includes(selected) ? selected : types[0]
+}
+
+/**
+ * Store the damage type selected for a damage part
+ * @param {Item5e} item a weapon/spell held by an actor
+ * @param {Number} partIndex index of the damage part
+ * @param {string} type selected damage type
+ */
+export function setSelectedDamageType(item, partIndex, type) {
+  const key = getDamageTypeSelectionKey(item)
+  damageTypeSelections.set(key, { ...damageTypeSelections.get(key), [partIndex]: type })
+}
+
 /**
  * For a given weapon/spell/item, return the data required to perform an attack
  * This was part of "WeaponData" in v3 and migrated to "AttackActivity" on the
@@ -27,13 +58,20 @@ export function getAttackData(item) {
     const attackActivity = getActivityFromItem(item) || {}
     attackData = { ...attackActivity }
     if (attackActivity.damage) {
-      const mainType = attackData.damage.parts.find(p => p.types.first())?.types.first() ?? ''
+      const partTypes = attackData.damage.parts.map(p => Array.from(p.types ?? []))
+      const selectedTypes = partTypes.map((types, i) => getSelectedDamageType(item, i, types))
+      const mainType = selectedTypes.find(t => t) ?? ''
       attackData.damage = {
-        parts: attackData.damage.parts.map(p => {
+        parts: attackData.damage.parts.map((p, i) => {
           let formula = p.formula + (p.base && !/@mod\b/.test(p.formula) ? ' + @mod' : '')
-          const type = p.types.first() ?? mainType
+          const type = selectedTypes[i] ?? mainType
 
-          if (type && !/\[[^\]]+\]$/.test(formula)) {
+          // swap any flavor that already names one of the selectable types for the selected one
+          if (partTypes[i].length > 1) {
+            formula = formula.replace(/\[([^\]]+)\]/g, (match, flavor) => partTypes[i].includes(flavor) ? `[${type}]` : match)
+          }
+
+          if (type &&!/\[[^\]]+\]$/.test(formula)) {
             if (formula.includes('@mod')) {
               formula = formula
                 .split(/\s*\+\s*/)
@@ -45,7 +83,7 @@ export function getAttackData(item) {
             }
           }
 
-          return [formula, type]
+          return [formula, type, partTypes[i]]
         }),
       }
       if (item.system.properties.has('ver')) {
@@ -62,7 +100,22 @@ export function getAttackData(item) {
       if (item.type === 'spell' && item.system.level === 0 && item.name !== 'Eldritch Blast') {
         attackData.scaling = { mode: 'cantrip' }
       }
-      attackData.rollDamage = attackActivity.rollDamage.bind(attackActivity)
+      // apply the selected damage types to the system damage rolls as well
+      const rollDamage = attackActivity.rollDamage.bind(attackActivity)
+      attackData.rollDamage = async (...args) => {
+        const hookId = Hooks.on('dnd5e.preRollDamageV2', (rollConfig) => {
+          if (rollConfig.subject?.uuid !== attackActivity.uuid) return
+          rollConfig.rolls?.forEach((roll, i) => {
+            if (roll.options?.types?.includes(selectedTypes[i])) roll.options.type = selectedTypes[i]
+          })
+        })
+        try {
+          return await rollDamage(...args)
+        }
+        finally {
+          Hooks.off('dnd5e.preRollDamageV2', hookId)
+        }
+      }
     }
   }
   else {
@@ -391,11 +444,7 @@ export async function prepareMonsters(actorList, keepCheckboxes = false, oldMons
       let checkVersatile = attackData.damage.versatile != ''
       for (let j = 0; j < 1 + ((checkVersatile) ? 1 : 0); j++) {
         let isVersatile = (j < 1) ? false : attackData.damage.versatile != ''
-        let damageData = getDamageFormulaAndType(weaponData, isVersatile)
-        let weaponDamageText = ``
-        for (let i = 0; i < damageData[0].length; i++) {
-          ((i > 0) ? weaponDamageText += `<br>${damageData[0][i]} ${damageData[1][i].capitalize()}` : weaponDamageText += `${damageData[0][i]} ${damageData[1][i].capitalize()}`)
-        }
+        const { weaponDamageText, damageParts } = getWeaponDamageDisplay(weaponData, isVersatile)
         numAttacksTotal = 1, preChecked = false
         autoDetect = game.settings.get(moduleName, 'autoDetectMultiattacks')
         if (autoDetect > 0) [numAttacksTotal, preChecked] = getMultiattackFromActor(weaponData.name, weaponData.actor, weapons, options)
@@ -428,6 +477,7 @@ export async function prepareMonsters(actorList, keepCheckboxes = false, oldMons
           weaponAttackBonusText: getTextFromAttackBonus(getAttackBonus(weaponData)),
           weaponRange: weaponRangeText,
           weaponDamageText: weaponDamageText,
+          damageParts: damageParts,
           useButtonName: `use${(weaponData.id + ((isVersatile) ? ` (${game.i18n.localize('Versatile')})` : ``)).replace(' ', '-')}`,
           useButtonValue: (keepCheckboxes) ? oldMonsters[actor.id]['weapons'][weaponID].useButtonValue : (preChecked) ? `checked` : ``,
           averageDamage: averageDamage[weaponID],
@@ -641,6 +691,7 @@ export function getDamageFormulaAndType(weaponData, isVersatile = false) {
   let diceFormulas = []
   let damageTypes = []
   let damageTypeLabels = []
+  let damageTypeOptions = []
   let lengthIndex = 0
   let hasEffect = false
 
@@ -661,12 +712,12 @@ export function getDamageFormulaAndType(weaponData, isVersatile = false) {
 
   const firstDamagePart = attackData.damage.parts[0]
   const mainType = (firstDamagePart?.[1] || firstDamagePart?.[0].match(/\[([^\]]+)\]/)?.[1]) ?? ''
-  const baseDamageParts = attackData.damage.parts.map(([formula, type]) => {
+  const baseDamageParts = attackData.damage.parts.map(([formula, type, types]) => {
     const resolvedType = type || formula.match(/\[([^\]]+)\]/)?.[1] || ''
     if (!resolvedType && mainType && !/\[[^\]]+\]/.test(formula)) {
       formula = `${formula}[${mainType}]`
     }
-    return [formula, resolvedType]
+    return [formula, resolvedType, types ?? []]
   });
 
   const spellDamageStepIncrease = weaponData.type == 'spell' ? getSpellDamageStepIncrease(weaponData.actor) : 0
@@ -675,9 +726,10 @@ export function getDamageFormulaAndType(weaponData, isVersatile = false) {
     if (attackData.damage.versatile) {
       attackData.damage.versatile = increaseDamageDieDenominations(attackData.damage.versatile, spellDamageStepIncrease)
     }
-    damageParts = damageParts.map(([formula, type]) => [
+    damageParts = damageParts.map(([formula, type, types]) => [
       increaseDamageDieDenominations(formula, spellDamageStepIncrease),
       type,
+      types,
     ])
   }
 
@@ -698,12 +750,13 @@ export function getDamageFormulaAndType(weaponData, isVersatile = false) {
 
     const finalBonus = uniqueTerms.join(' + ')
     const bonusFormated = convertDamageString(finalBonus)
-    damageParts.push(...bonusFormated.map(([formula, type]) => [formula, type || mainType]))
+    damageParts.push(...bonusFormated.map(([formula, type]) => [formula, type || mainType, []]))
   }
 
   attackData.damage.parts = damageParts
 
   for (let diceFormulaParts of attackData.damage.parts) {
+    damageTypeOptions.push(diceFormulaParts[2] ?? [])
     damageTypeLabels.push(diceFormulaParts[1])
     damageTypes.push(diceFormulaParts[1].capitalize())
     if (weaponData.type == 'spell') {
@@ -726,7 +779,46 @@ export function getDamageFormulaAndType(weaponData, isVersatile = false) {
     }
     lengthIndex++
   }
-  return [diceFormulas, damageTypes, damageTypeLabels]
+  return [diceFormulas, damageTypes, damageTypeLabels, damageTypeOptions]
+}
+
+/**
+ * Build the damage display data for a weapon in the dialog
+ * @param {Item5e} weaponData - An item in an actor's inventory
+ * @param {boolean} isVersatile - true if calculating versatile damage, false otherwise
+ * @returns weaponDamageText (plain html text) and damageParts (one entry per damage part,
+ *  with the selectable damage types when the part allows more than one)
+ */
+export function getWeaponDamageDisplay(weaponData, isVersatile = false) {
+  const [diceFormulas, damageTypes, damageTypeLabels, damageTypeOptions] = getDamageFormulaAndType(weaponData, isVersatile)
+  const damageParts = diceFormulas.map((formula, i) => ({
+    partIndex: i,
+    formula,
+    typeLabel: damageTypes[i],
+    typeOptions: (damageTypeOptions[i]?.length > 1)
+      ? damageTypeOptions[i].map(type => ({
+          value: type,
+          label: game.i18n.localize(CONFIG.DND5E.damageTypes[type]?.label ?? type.capitalize()),
+          selected: type === damageTypeLabels[i],
+        }))
+      : null,
+  }))
+  const weaponDamageText = damageParts.map(p => `${p.formula} ${p.typeLabel}`).join('<br>')
+  return { weaponDamageText, damageParts }
+}
+
+/**
+ * Refresh the damage display of every dialog entry (normal and versatile) of a weapon
+ * @param {object} monsters - monsters data as prepared by prepareMonsters
+ * @param {Item5e} weaponData - the weapon whose damage display changed
+ */
+export function updateWeaponDamageDisplay(monsters, weaponData) {
+  for (let monsterData of Object.values(monsters)) {
+    for (let [weaponKey, weaponLabel] of Object.entries(monsterData.weapons)) {
+      if (weaponLabel.weaponId !== weaponData.id) continue
+      Object.assign(weaponLabel, getWeaponDamageDisplay(weaponData, weaponKey !== weaponData.id))
+    }
+  }
 }
 
 export function calcD20Needed(attackBonus, targetAC, rollTypeValue, mobRulesSetting) {

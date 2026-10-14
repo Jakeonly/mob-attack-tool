@@ -1,6 +1,6 @@
 import { moduleName } from '../mobAttack.js'
 import { foundryEqualOrNewerThan } from '../versions.js'
-import { getTargetData, prepareMonsters, prepareMobAttack, checkTarget } from '../utils.js'
+import { getTargetData, prepareMonsters, prepareMobAttack, checkTarget, setSelectedDamageType, updateWeaponDamageDisplay } from '../utils.js'
 import { rollMobAttack } from '../mobRules.js'
 import { rollMobAttackIndividually } from '../individualRolls.js'
 
@@ -911,6 +911,25 @@ class MobAttackDialogV2 extends HandlebarsApplicationMixin(ApplicationV2) {
             }
           }
         }
+        this.mat.localUpdate = true
+        this.render()
+      })
+    }
+
+    const damageTypeChange = this.element.querySelectorAll('.mat-damage-type')
+    for (const select of damageTypeChange) {
+      // keep the click from opening the weapon sheet
+      select.addEventListener('click', e => e.stopPropagation())
+      select.addEventListener('change', (e) => {
+        e.preventDefault()
+        e.stopImmediatePropagation()
+
+        const { weaponId, partIndex } = e.currentTarget.dataset
+        const weapon = this.mat.weapons[weaponId]
+        if (!weapon) return
+        setSelectedDamageType(weapon, parseInt(partIndex), e.currentTarget.value)
+        updateWeaponDamageDisplay(this.mat.monsters, weapon)
+
         this.mat.localUpdate = true
         this.render()
       })

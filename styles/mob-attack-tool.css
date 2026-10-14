@@ -264,6 +264,23 @@ input[type="number"].numTable {
 	cursor: pointer;
 }
 
+.mat-damage-part {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: 2px 4px;
+}
+
+.mat-damage-text select.mat-damage-type {
+	width: auto;
+	max-width: 100%;
+	height: 1.6em;
+	padding: 0 2px;
+	font-size: inherit;
+	cursor: pointer;
+}
+
 .mat-collapsible {
 	cursor: pointer;
 	width: 100%;
