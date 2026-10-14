@@ -667,6 +667,18 @@ export function getDamageFormulaAndType(weaponData, isVersatile = false) {
     }
     return [formula, resolvedType]
   });
+
+  const spellDamageStepIncrease = weaponData.type == 'spell' ? getSpellDamageStepIncrease(weaponData.actor) : 0
+  if (spellDamageStepIncrease > 0) {
+    if (attackData.damage.versatile) {
+      attackData.damage.versatile = increaseDamageDieDenominations(attackData.damage.versatile, spellDamageStepIncrease)
+    }
+    attackData.damage.parts = attackData.damage.parts.map(([formula, type]) => [
+      increaseDamageDieDenominations(formula, spellDamageStepIncrease),
+      type,
+    ])
+  }
+
   for (let diceFormulaParts of attackData.damage.parts) {
     damageTypeLabels.push(diceFormulaParts[1])
     damageTypes.push(diceFormulaParts[1].capitalize())
@@ -845,6 +857,28 @@ export function getScalingFactor(weaponData) {
     }
   }
   return cantripScalingFactor
+}
+
+function getSpellDamageStepIncrease(actor) {
+  const abilities = actor?.system?.abilities
+  if (!abilities) return 0
+
+  const highestMentalScore = Math.max(
+    getProperty(abilities, 'int.value') ?? 0,
+    getProperty(abilities, 'wis.value') ?? 0,
+    getProperty(abilities, 'cha.value') ?? 0,
+  )
+
+  return Math.max(0, highestMentalScore - 20)
+}
+
+function increaseDamageDieDenominations(formula, stepIncrease) {
+  if (!stepIncrease || typeof formula !== 'string') return formula
+
+  return formula.replace(/(\d*)d(\d+)/gi, (match, dieCount, dieDenomination) => {
+    const increasedDenomination = Number.parseInt(dieDenomination) + stepIncrease
+    return `${dieCount || ''}d${increasedDenomination}`
+  })
 }
 
 /**
