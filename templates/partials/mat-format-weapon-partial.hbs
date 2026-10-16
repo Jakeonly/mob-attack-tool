@@ -21,8 +21,26 @@
 				title="Open {{this.weaponName}} sheet">{{this.weaponAttackBonusText}} {{localize 'MAT.toHit'}}</label>
 			<label class="hint mat-label mat-col3 mat-weapon-range"
 				title="Open {{this.weaponName}} sheet">{{this.weaponRange}}</label>
-			<label class="hint mat-label mat-col4 mat-damage-text"
-				title="Open {{this.weaponName}} sheet">{{{this.weaponDamageText}}}</label>
+			<div class="hint mat-label mat-col4 mat-damage-text"
+				title="Open {{this.weaponName}} sheet">
+				{{#each this.damageParts}}
+				<div class="mat-damage-part">
+					<span>{{this.formula}}</span>
+					{{#if this.typeOptions}}
+					<select class="mat-damage-type" data-weapon-id="{{../weaponId}}" data-part-index="{{this.partIndex}}"
+						title="{{localize 'MAT.damageTypeTitle'}}">
+						{{#each this.typeOptions}}
+						<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+						{{/each}}
+					</select>
+					{{else}}
+					<span>{{this.typeLabel}}</span>
+					{{/if}}
+				</div>
+				{{else}}
+				{{{this.weaponDamageText}}}
+				{{/each}}
+			</div>
 		</a>
 	</div>
 	<input class="mat-label mat-col4 useWeapon" title="{{localize 'MAT.useWeaponTitle'}}" type="checkbox"

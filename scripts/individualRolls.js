@@ -257,6 +257,14 @@ export async function processIndividualDamageRolls(data, weaponData, finalAttack
           let damageType = damageTypes.join(', ')
           let damageRoll = new CONFIG.Dice.DamageRoll(diceFormula, { mod: attackData.ability == 'none' ? 0 : weaponData.actor.system.abilities[attackData.ability].mod }, { type: damageTypeLabels[0] })
 
+          if(!noCrit)
+          {
+            numCrits;
+          }else
+          {
+            numCrits = 0;
+          }
+          
           if (numCrits > 0) {
             let extraDice = data.extraDice ?? data.data?.extraDice
             let extraCrit = data.tripleCritical ?? data.data?.tripleCritical

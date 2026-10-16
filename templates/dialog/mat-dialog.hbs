@@ -5,49 +5,14 @@
 			({{this.numTargets}})</a>
 	</nav>
 	<hr>
-	<section class="content">
-		<div class="form-group">
-			<label>
-				{{localize 'MAT.mobNameDialog'}}:
-			</label>
-			<div class="form-fields">
-				<label>
-					<a class="previousMob" title="{{localize 'Switch to previous saved mob'}}">
-						<i class="fas fa-arrow-left"></i>
-					</a>
-				</label>
-				<input type="text" name="mobName" class="MAT-mobName" value="{{mobName}}" onClick="this.select();" />
-				<label>
-					<a class="nextMob" title="{{localize 'Switch to next saved mob'}}">
-						<i class="fas fa-arrow-right"></i>
-					</a>
-				</label>
-				<button type="button" title="{{localize 'MAT.saveMobButtonTitle'}}" name="saveMob" class="saveMobButton">
-					<i class="far fa-save"></i>
-				</button>
-				<button type="button" title="{{localize 'MAT.selectMobButtonTitle'}}" name="selectMob" class="selectMobButton">
-					<i class="fas fa-file-import fa-fw"></i>
-				</button>
-			</div>
-		</div>
-	</section>
-	<hr>
 	<section id="mobDialog-tabs" class="content">
 		<div class="tab active" data-tab="weapons">
-			<p class="hint">{{localize 'MAT.dialogNumSelected'}} <strong>{{numSelected}}</strong>
-				token{{pluralTokensOrNot}}. {{localize 'MAT.totalNumberOfAttacks'}}:
-				<strong>{{this.numTotalAttacks}}</strong>.
-			</p>
-			<p class="hint">{{localize 'MAT.averageDamageIfAllAttacksHit'}}:
-				<strong>{{this.totalAverageDamage}}</strong> {{localize 'MAT.pointsOfDamage'}}.
-			</p>
 			<div name="mobListOptions">
-				<hr>
 				{{#each this.monsters}}
 				{{#with this}}
 				{{> mat.formatMonster}}
 				{{/with}}
-				<div style="border:2px groove #eeede0; padding: 3px; margin-bottom: 0.5em;">
+				<div class="mat-monster-weapons-container">
 					{{#each this.weapons}}
 					{{#with this}}
 					{{> mat.formatWeapon}}
@@ -58,9 +23,14 @@
 			</div>
 			<hr>
 			<a class="mat-collapsible">
-				<h4><i class="far fa-{{this.collapsiblePlusMinus}}-square"></i> {{this.hiddenCollapsibleName}}<h4>
+				<h4><i class="far fa-{{this.collapsiblePlusMinus}}-square"></i> {{this.hiddenCollapsibleName}}</h4>
 			</a>
 			<div class="{{this.hiddenCollapsibleCSS}}">
+				<div class="mat-rolltype mat-checkboxes-row">
+					<label class="mat-label"><input type="checkbox" name="tripleCritical" {{this.tripleCriticalSelection}}> Triple Critical</label>
+					<label class="mat-label"><input type="checkbox" name="extraDice" {{this.extraDiceSelection}}> Extra Dice</label>
+					<label class="mat-label"><input type="checkbox" name="doubleDamage" {{this.doubleDamageSelection}}> Double Damage</label>
+				</div>
 				{{#if selectRollType}}
 				<div class="mat-rolltype">
 					<label class="mat-label mat-col1">{{localize 'MAT.selectRollType'}}: </label>
@@ -72,13 +42,7 @@
 						</option>
 					</select>
 				</div>
-
 				{{/if}}
-				<div class="mat-rolltype">
-					<label class="mat-label mat-col1"><input type="checkbox" name="tripleCritical" {{this.tripleCriticalSelection}}> Triple Critical</label>
-					<label class="mat-label mat-col2"><input type="checkbox" name="extraDice" {{this.extraDiceSelection}}> Extra Dice</label>
-					<label class="mat-label mat-col2"><input type="checkbox" name="doubleDamage" {{this.doubleDamageSelection}}> Double Damage</label>
-				</div>
 				<div class="mat-macro-export">
 					<label class="mat-label mat-col1">{{localize 'MAT.exportToMacro'}}: </label>
 					<button type="button" class="mat-label exportMobAttack" name="exportMobAttack"
@@ -143,6 +107,16 @@
 			</div>
 		</div>
 	</section>
+	<hr>
+	<div class="mat-damage-summary">
+				<p class="hint" style="margin: 0;">{{localize 'MAT.dialogNumSelected'}} <strong>{{numSelected}}</strong>
+					token{{pluralTokensOrNot}}. {{localize 'MAT.totalNumberOfAttacks'}}:
+					<strong>{{this.numTotalAttacks}}</strong>.
+				</p>
+				<p class="hint" style="margin: 4px 0 0 0;">{{localize 'MAT.averageDamageIfAllAttacksHit'}}:
+					<strong>{{this.totalAverageDamage}}</strong> {{localize 'MAT.pointsOfDamage'}}.
+				</p>
+			</div>
 	<hr>
 	<footer class="sheet-footer flexrow">
 		<button type="submit" class="executeMobAttack" name="executeMobAttack" autofocus>

@@ -13,6 +13,7 @@
 	"MAT.dialogNumSelected": "You have selected",
 	"MAT.numAttacksTitle": "Number of Attacks",
 	"MAT.useWeaponTitle": "Use Weapon",
+	"MAT.damageTypeTitle": "Damage Type",
 	"MAT.selectMob": "Select mob",
 	"MAT.selectAMob": "select a mob",
 	"MAT.savedMobNotify": "{mobName} saved!",

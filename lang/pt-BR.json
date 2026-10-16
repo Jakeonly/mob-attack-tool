@@ -13,6 +13,7 @@
 	"MAT.dialogNumSelected": "Você selecionou",
 	"MAT.numAttacksTitle": "Número de Ataques",
 	"MAT.useWeaponTitle": "Usar Arma",
+	"MAT.damageTypeTitle": "Tipo de Dano",
 	"MAT.selectMob": "Selecionar Grupo",
 	"MAT.selectAMob": "selecione um grupo",
 	"MAT.savedMobNotify": "{mobName} salvo!",

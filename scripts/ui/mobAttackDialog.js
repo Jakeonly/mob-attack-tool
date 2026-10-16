@@ -1,5 +1,5 @@
 import { moduleName } from '../mobAttack.js'
-import { checkTarget, getTargetData, prepareMonsters, prepareMobAttack } from '../utils.js'
+import { checkTarget, getTargetData, prepareMonsters, prepareMobAttack, setSelectedDamageType, updateWeaponDamageDisplay } from '../utils.js'
 import { rollMobAttackIndividually } from '../individualRolls.js'
 import { rollMobAttack } from '../mobRules.js'
 import { foundryEqualOrNewerThan } from '../versions.js'
@@ -68,7 +68,7 @@ export class MobAttackDialog extends FormApplication {
       title: 'Mob Attack Tool',
       id: 'mob-attack-tool-dialog',
       template: 'modules/mob-attack-tool/templates/dialog/mat-dialog.hbs',
-      width: '505',
+      width: '600',
       height: 'auto',
       closeOnSubmit: false,
       tabs: [{ navSelector: '.tabs', contentSelector: 'form', initial: 'weapons' }],
@@ -344,6 +344,18 @@ export class MobAttackDialog extends FormApplication {
           }
         }
       }
+      this.localUpdate = true
+      this.render(true)
+    })
+
+    // update application if the damage type of a weapon is changed
+    html.on('click', '.mat-damage-type', event => event.stopPropagation())
+    html.on('change', '.mat-damage-type', async (event) => {
+      const { weaponId, partIndex } = event.currentTarget.dataset
+      const weapon = this.weapons[weaponId]
+      if (!weapon) return
+      setSelectedDamageType(weapon, parseInt(partIndex), event.currentTarget.value)
+      updateWeaponDamageDisplay(this.monsters, weapon)
       this.localUpdate = true
       this.render(true)
     })
