@@ -4,6 +4,49 @@
 
 .mat-dialog-content {
 	cursor: default;
+	padding: 8px;
+	background: rgba(247, 242, 233, 0.95);
+	border-radius: 8px;
+}
+
+.mat-dialog-content .sheet-tabs.tabs {
+	display: flex;
+	background: rgba(235, 221, 202, 0.9);
+	border: 1px solid #c8b093;
+	border-radius: 6px;
+	padding: 4px;
+	margin-bottom: 8px;
+	gap: 4px;
+}
+
+.mat-dialog-content .sheet-tabs.tabs .item {
+	flex: 1;
+	text-align: center;
+	padding: 6px 10px;
+	border-radius: 4px;
+	font-weight: bold;
+	color: #4a3525;
+	border: 1px solid transparent;
+	transition: all 0.2s ease;
+}
+
+.mat-dialog-content .sheet-tabs.tabs .item:hover {
+	background: rgba(247, 242, 233, 0.8);
+	border-color: #b39470;
+	color: #2b1d12;
+}
+
+.mat-dialog-content .sheet-tabs.tabs .item.active {
+	background: #fcf8f2;
+	border-color: #8a6239;
+	color: #2b1d12;
+	box-shadow: 0 1px 3px rgba(80, 50, 20, 0.15);
+}
+
+.mat-dialog-content hr {
+	border: none;
+	border-top: 1px solid #c8b093;
+	margin: 8px 0;
 }
 
 #mob-attack-tool-dialog.mat-dialog-content2 {
@@ -384,8 +427,32 @@ input[type="checkbox"].useWeapon {
 
 .mat-collapsible {
 	cursor: pointer;
+	display: block;
 	width: 100%;
-	margin: 0px 0px 3px 0px;
+	background: rgba(235, 221, 202, 0.9);
+	border: 1px solid #b39470;
+	border-radius: 6px;
+	padding: 6px 10px;
+	margin: 0.5rem 0;
+	box-shadow: 0 1px 2px rgba(80, 50, 20, 0.05);
+	color: #3b281a;
+	transition: all 0.2s ease;
+	text-decoration: none;
+}
+
+.mat-collapsible:hover {
+	background: rgba(225, 207, 184, 0.95);
+	border-color: #8a6239;
+	color: #2c1d12;
+}
+
+.mat-collapsible h4 {
+	margin: 0;
+	font-size: 0.95rem;
+	font-weight: 600;
+	display: flex;
+	align-items: center;
+	gap: 6px;
 }
 
 .mat-collapsible-content-closed {
