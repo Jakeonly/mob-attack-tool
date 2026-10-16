@@ -1,6 +1,6 @@
 import { moduleName } from '../mobAttack.js'
 import { foundryEqualOrNewerThan } from '../versions.js'
-import { getTargetData, prepareMonsters, prepareMobAttack, checkTarget, setSelectedDamageType, updateWeaponDamageDisplay } from '../utils.js'
+import { getTargetData, prepareMonsters, prepareMobAttack, checkTarget, setSelectedDamageType, updateWeaponDamageDisplay, setTargetCritOption } from '../utils.js'
 import { rollMobAttack } from '../mobRules.js'
 import { rollMobAttackIndividually } from '../individualRolls.js'
 
@@ -932,6 +932,23 @@ class MobAttackDialogV2 extends HandlebarsApplicationMixin(ApplicationV2) {
 
         this.mat.localUpdate = true
         this.render()
+      })
+    }
+
+    const critOptionChange = this.element.querySelectorAll('.targetCritOption')
+    for (const input of critOptionChange) {
+      input.addEventListener('change', (e) => {
+        e.stopImmediatePropagation()
+
+        const { targetId, option } = e.currentTarget.dataset
+        const options = setTargetCritOption(targetId, option, e.currentTarget.checked)
+        for (const target of this.mat.targets.filter(t => t.targetId === targetId)) {
+          Object.assign(target, options)
+        }
+        // uncheck the other option, they are mutually exclusive
+        for (const other of this.element.querySelectorAll(`.targetCritOption[data-target-id="${targetId}"]`)) {
+          other.checked = options[other.dataset.option] ?? false
+        }
       })
     }
 

@@ -1,5 +1,5 @@
 import { moduleName } from './mobAttack.js'
-import { endGroupedMobTurn, getDamageFormulaAndType, sendChatMessage, getAttackBonus, callMidiMacro, getAttackData, getDamageOptions, formatAttackTargets, getTextFromAttackBonus } from './utils.js'
+import { endGroupedMobTurn, getDamageFormulaAndType, sendChatMessage, getAttackBonus, callMidiMacro, getAttackData, getDamageOptions, formatAttackTargets, getTextFromAttackBonus, isTargetCritImmune, isTargetCritOnlyNat20 } from './utils.js'
 import { foundryEqualOrNewerThan } from './versions.js'
 
 const { getProperty } = foundry.utils
@@ -63,6 +63,10 @@ export async function rollMobAttackIndividually(data) {
       else if (weaponData.type === 'spell' && weaponData.actor.getFlag('dnd5e', 'spellCriticalThreshold') > 0) {
         critThreshold = weaponData.actor.getFlag('dnd5e', 'spellCriticalThreshold')
       }
+      // Ignore expanded critical ranges against this target
+      if (isTargetCritOnlyNat20(value[j]?.targetId)) critThreshold = 20
+      // Crit-immune targets ignore the whole critical range (including expanded ranges)
+      const immuneToCrit = isTargetCritImmune(value[j]?.targetId)
 
       let tokenAttackList = []
       let discardedRollTotal
@@ -91,20 +95,22 @@ export async function rollMobAttackIndividually(data) {
         // Also, make a list of tokens that successfully attacked for (animation) macro purposes
         let attackToken
         let availableTokens = data.selectedTokenIds.filter(t => (!tokenAttackList.includes(t) || (canvas.tokens.get(t.tokenId).actor.id === weaponData.actor.id && tokenAttackList.filter(atkToken => atkToken.tokenId === t.tokenId).length < Math.floor(availableAttacks / data.numSelected))))
-        if (attackRollEvaluated[i].total - finalAttackBonus >= critThreshold) {
+        const naturalRoll = attackRollEvaluated[i].total - finalAttackBonus
+        if (!immuneToCrit && naturalRoll >= critThreshold) {
           numCrits++
           numHitAttacks += 1
           successfulAttackRolls.push(attackRollEvaluated[i])
           atkRollData.push({ roll: attackRollEvaluated[i].total, color: 'max', finalAttackBonusText, discarded, discardedRollTotal })
           attackToken = availableTokens[Math.floor(Math.random() * availableTokens.length)]
         }
-        else if (attackRollEvaluated[i].total - finalAttackBonus === 1) {
+        else if (naturalRoll === 1) {
           numCritFails++
           if (game.user.getFlag(moduleName, 'showAllAttackRolls') ?? game.settings.get(moduleName, 'showAllAttackRolls')) {
             atkRollData.push({ roll: attackRollEvaluated[i].total, color: 'min', finalAttackBonusText, discarded, discardedRollTotal })
           }
         }
-        else if (attackRollEvaluated[i].total >= ((targetAC) ? targetAC : 0) && attackRollEvaluated[i].total - finalAttackBonus > 1) {
+        // Against crit-immune targets, a natural 20 still hits automatically, but as a normal hit
+        else if ((immuneToCrit && naturalRoll >= 20) || (attackRollEvaluated[i].total >= ((targetAC) ? targetAC : 0) && naturalRoll > 1)) {
           numHitAttacks += 1
           successfulAttackRolls.push(attackRollEvaluated[i])
           atkRollData.push({ roll: attackRollEvaluated[i].total, color: '', finalAttackBonusText, discarded, discardedRollTotal })
@@ -228,6 +234,8 @@ export async function processIndividualDamageRolls(data, weaponData, finalAttack
     critThreshold = weaponData.actor.getFlag('dnd5e', 'spellCriticalThreshold')
     console.log('critThreshold spell: ', critThreshold)
   }
+  // Ignore expanded critical ranges against this target
+  if (isTargetCritOnlyNat20(targetId)) critThreshold = 20
 
   // Process attack and damage rolls
   // let showAttackRolls = game.user.getFlag(moduleName, 'showIndividualAttackRolls') ?? game.settings.get(moduleName, 'showIndividualAttackRolls')
@@ -246,6 +254,10 @@ export async function processIndividualDamageRolls(data, weaponData, finalAttack
   const FoundryNumericTerm = foundry.dice?.terms?.NumericTerm || globalThis.NumericTerm || class {}
   const attackData = getAttackData(weaponData)
 
+  // Targets immune to critical hits take normal damage: natural 20s still hit, but deal no extra crit dice
+  const noCrit = isTargetCritImmune(targetId)
+  if (noCrit) numCrits = 0
+
   if (numHitAttacks != 0) {
     // midi active
     if (midi_QOL_Active) {
@@ -257,14 +269,6 @@ export async function processIndividualDamageRolls(data, weaponData, finalAttack
           let damageType = damageTypes.join(', ')
           let damageRoll = new CONFIG.Dice.DamageRoll(diceFormula, { mod: attackData.ability == 'none' ? 0 : weaponData.actor.system.abilities[attackData.ability].mod }, { type: damageTypeLabels[0] })
 
-          if(!noCrit)
-          {
-            numCrits;
-          }else
-          {
-            numCrits = 0;
-          }
-          
           if (numCrits > 0) {
             let extraDice = data.extraDice ?? data.data?.extraDice
             let extraCrit = data.tripleCritical ?? data.data?.tripleCritical

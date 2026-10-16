@@ -1,5 +1,5 @@
 import { moduleName } from '../mobAttack.js'
-import { checkTarget, getTargetData, prepareMonsters, prepareMobAttack, setSelectedDamageType, updateWeaponDamageDisplay } from '../utils.js'
+import { checkTarget, getTargetData, prepareMonsters, prepareMobAttack, setSelectedDamageType, updateWeaponDamageDisplay, setTargetCritOption } from '../utils.js'
 import { rollMobAttackIndividually } from '../individualRolls.js'
 import { rollMobAttack } from '../mobRules.js'
 import { foundryEqualOrNewerThan } from '../versions.js'
@@ -358,6 +358,19 @@ export class MobAttackDialog extends FormApplication {
       updateWeaponDamageDisplay(this.monsters, weapon)
       this.localUpdate = true
       this.render(true)
+    })
+
+    // update critical hit options of a target
+    html.on('change', '.targetCritOption', (event) => {
+      const { targetId, option } = event.currentTarget.dataset
+      const options = setTargetCritOption(targetId, option, event.currentTarget.checked)
+      for (const target of this.targets.filter(t => t.targetId === targetId)) {
+        Object.assign(target, options)
+      }
+      // uncheck the other option, they are mutually exclusive
+      html.find(`.targetCritOption[data-target-id="${targetId}"]`).each((_, other) => {
+        other.checked = options[other.dataset.option] ?? false
+      })
     })
 
     // update application if number of weapon attacks input is changed

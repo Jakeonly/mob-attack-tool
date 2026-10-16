@@ -608,3 +608,17 @@ section .mobTable input[type=number] {
 section .mobTable td {
 	padding: 0.5rem 0.25rem;
 }
+
+.mat-crit-options {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 2px 12px;
+	margin-bottom: 0.25em;
+}
+
+.mat-crit-option {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	cursor: pointer;
+}

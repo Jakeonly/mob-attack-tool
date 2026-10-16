@@ -18,6 +18,18 @@
         'MAT.averageDamageIfAllAttacksHit'}}: <strong>{{this.targetTotalAverageDamage}}</strong>
         {{localize 'MAT.pointsOfDamage'}}.
       </p>
+      <div class="mat-crit-options">
+        <label class="mat-crit-option" title="{{localize 'MAT.immuneToCritTitle'}}">
+          <input type="checkbox" class="targetCritOption" data-option="immuneToCrit" data-target-id="{{this.targetId}}"
+            {{#if this.immuneToCrit}}checked{{/if}} />
+          {{localize 'MAT.immuneToCrit'}}
+        </label>
+        <label class="mat-crit-option" title="{{localize 'MAT.critOnlyNat20Title'}}">
+          <input type="checkbox" class="targetCritOption" data-option="critOnlyNat20" data-target-id="{{this.targetId}}"
+            {{#if this.critOnlyNat20}}checked{{/if}} />
+          {{localize 'MAT.critOnlyNat20'}}
+        </label>
+      </div>
       <div class="mat-attacks-on-target-box">
         {{#each this.weapons}}
         <label class="mat-label target-attack-box" data-drag="true">

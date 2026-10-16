@@ -35,6 +35,55 @@ export function setSelectedDamageType(item, partIndex, type) {
   damageTypeSelections.set(key, { ...damageTypeSelections.get(key), [partIndex]: type })
 }
 
+// Critical hit options per target token id (session only)
+const targetCritOptions = new Map()
+
+/**
+ * Return a critical hit option for a target token
+ * @param {string} targetId token id
+ * @param {string} option 'immuneToCrit' or 'critOnlyNat20'
+ * @returns {boolean}
+ */
+export function getTargetCritOption(targetId, option) {
+  return targetCritOptions.get(targetId)?.[option] ?? false
+}
+
+/**
+ * Set a critical hit option for a target token
+ * @param {string} targetId token id
+ * @param {string} option 'immuneToCrit' or 'critOnlyNat20'
+ * @param {boolean} value
+ */
+export function setTargetCritOption(targetId, option, value) {
+  const options = { ...targetCritOptions.get(targetId), [option]: value }
+  // Both options are mutually exclusive
+  if (value) {
+    for (const other of CRIT_OPTIONS.filter(o => o !== option)) options[other] = false
+  }
+  targetCritOptions.set(targetId, options)
+  return options
+}
+
+export const CRIT_OPTIONS = ['immuneToCrit', 'critOnlyNat20']
+
+/**
+ * Whether a target token is marked as immune to critical hits
+ * @param {string} targetId token id
+ * @returns {boolean}
+ */
+export function isTargetCritImmune(targetId) {
+  return getTargetCritOption(targetId, 'immuneToCrit')
+}
+
+/**
+ * Whether only natural 20s are critical hits against a target token
+ * @param {string} targetId token id
+ * @returns {boolean}
+ */
+export function isTargetCritOnlyNat20(targetId) {
+  return getTargetCritOption(targetId, 'critOnlyNat20')
+}
+
 /**
  * For a given weapon/spell/item, return the data required to perform an attack
  * This was part of "WeaponData" in v3 and migrated to "AttackActivity" on the
@@ -308,6 +357,8 @@ export async function getTargetData(monsters) {
       targetIndex: targetCount,
       targetAC: targetAC + armorClassMod,
       targetACtext: ((game.user.isGM) ? ` ${game.i18n.localize('MAT.dialogTargetArmorClassMessage')}` : ``),
+      immuneToCrit: isTargetCritImmune(targetToken?.id),
+      critOnlyNat20: isTargetCritOnlyNat20(targetToken?.id),
     })
 
     let targetTotalNumAttacks = targets[targets.length - 1].weapons.length
