@@ -61,6 +61,11 @@
 				<h4><i class="far fa-{{this.collapsiblePlusMinus}}-square"></i> {{this.hiddenCollapsibleName}}<h4>
 			</a>
 			<div class="{{this.hiddenCollapsibleCSS}}">
+				<div class="mat-rolltype mat-checkboxes-row">
+					<label class="mat-label"><input type="checkbox" name="tripleCritical" {{this.tripleCriticalSelection}}> Triple Critical</label>
+					<label class="mat-label"><input type="checkbox" name="extraDice" {{this.extraDiceSelection}}> Extra Dice</label>
+					<label class="mat-label"><input type="checkbox" name="doubleDamage" {{this.doubleDamageSelection}}> Double Damage</label>
+				</div>
 				{{#if selectRollType}}
 				<div class="mat-rolltype">
 					<label class="mat-label mat-col1">{{localize 'MAT.selectRollType'}}: </label>
@@ -72,13 +77,7 @@
 						</option>
 					</select>
 				</div>
-
 				{{/if}}
-				<div class="mat-rolltype">
-					<label class="mat-label mat-col1"><input type="checkbox" name="tripleCritical" {{this.tripleCriticalSelection}}> Triple Critical</label>
-					<label class="mat-label mat-col2"><input type="checkbox" name="extraDice" {{this.extraDiceSelection}}> Extra Dice</label>
-					<label class="mat-label mat-col2"><input type="checkbox" name="doubleDamage" {{this.doubleDamageSelection}}> Double Damage</label>
-				</div>
 				<div class="mat-macro-export">
 					<label class="mat-label mat-col1">{{localize 'MAT.exportToMacro'}}: </label>
 					<button type="button" class="mat-label exportMobAttack" name="exportMobAttack"

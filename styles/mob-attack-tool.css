@@ -394,75 +394,80 @@ input[type="checkbox"].useWeapon {
 
 .mat-collapsible-content-open {
 	display: block;
+	background: rgba(247, 242, 233, 0.9);
+	border: 1px solid #c8b093;
+	border-radius: 8px;
+	padding: 8px;
+	margin: 0.5rem 0;
+	box-shadow: 0 1px 3px rgba(80, 50, 20, 0.08);
 }
 
-.mat-dice-tooltip {
-	flex: auto;
-	order: unset;
-	display: block;
-	overflow: hidden;
-}
-
-.mat-dice-tooltip .tooltip-part {
-	border-bottom: 1px solid var(--color-border-light-1);
-	padding: 0.125rem 0;
-}
-
-.mat-dice-tooltip .tooltip-part:last-child {
-	border: none;
-	padding-bottom: 0;
-}
-
-.mat-dice-tooltip .dice {
-	display: flex;
+.mat-collapsible-content-open .mat-rolltype:not(.mat-checkboxes-row),
+.mat-collapsible-content-open .mat-macro-export {
+	background: rgba(235, 221, 202, 0.9);
+	border: 1px solid #b39470;
+	border-radius: 6px;
+	padding: 6px 10px;
+	margin-bottom: 6px;
+	box-shadow: 0 1px 2px rgba(80, 50, 20, 0.05);
+	transition: all 0.2s ease;
+	display: grid;
+	grid-template-columns: auto 120px;
 	align-items: center;
 }
 
-.mat-dice-tooltip .dice .dice-rolls {
-	flex: 1;
-	margin: 5px 0;
-	padding: 0;
-	display: flex;
-	flex-wrap: wrap;
-	gap: 1px;
-}
-
-.mat-dice-tooltip .dice .dice-rolls .roll {
-	float: unset;
-	margin: 0;
+.mat-collapsible-content-open .mat-checkboxes-row {
+	background: rgba(235, 221, 202, 0.9);
+	border: 1px solid #b39470;
+	border-radius: 6px;
+	padding: 8px 10px;
+	margin-bottom: 6px;
+	box-shadow: 0 1px 2px rgba(80, 50, 20, 0.05);
+	transition: all 0.2s ease;
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 8px;
+	align-items: center;
 	text-align: center;
-	position: relative;
-	min-width: 24px;
-	line-height: 24px;
-	background-repeat: no-repeat;
-	background-size: 24px 24px;
-	font-size: var(--font-size-16);
-	color: #000;
-	font-weight: bold;
-	text-align: center;
-	list-style-type: none;
 }
 
-.mat-dice-tooltip .dice-rolls .roll.d20 {
-	background-image: url("../../../icons/svg/d20-grey.svg");
+.mat-collapsible-content-open .mat-checkboxes-row .mat-label {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	cursor: pointer;
 }
 
-.mat-dice-tooltip .dice-rolls .roll.success,
-.mat-dice-tooltip .dice-rolls .roll.max {
-	color: #18520b;
-	filter: sepia(0.5) hue-rotate(60deg);
+.mat-collapsible-content-open select {
+	background: #ffffff;
+	border: 1px solid #b39470;
+	border-radius: 4px;
+	padding: 3px 6px;
+	color: #3b281a;
+	cursor: pointer;
+	box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+	transition: all 0.2s ease;
 }
 
-.mat-dice-tooltip .dice-rolls .roll.failure,
-.mat-dice-tooltip .dice-rolls .roll.min {
-	color: #aa0200;
-	filter: sepia(0.5) hue-rotate(-60deg);
+.mat-collapsible-content-open select:hover,
+.mat-collapsible-content-open select:focus {
+	border-color: #8a6239;
+	outline: none;
+	box-shadow: 0 0 3px rgba(138, 98, 57, 0.3);
 }
 
-.mat-dice-tooltip .dice-rolls .roll.discarded,
-.mat-dice-tooltip .dice-rolls .roll.rerolled {
-	color: inherit;
-	filter: sepia(0.5) contrast(0.75) opacity(0.4);
+.mat-collapsible-content-open .mat-rolltype:not(.mat-checkboxes-row):hover,
+.mat-collapsible-content-open .mat-checkboxes-row:hover,
+.mat-collapsible-content-open .mat-macro-export:hover {
+	border-color: #8a6239;
+	box-shadow: 0 2px 5px rgba(80, 50, 20, 0.12);
+}
+
+.mat-collapsible-content-open .mat-rolltype:last-child,
+.mat-collapsible-content-open .mat-checkboxes-row:last-child,
+.mat-collapsible-content-open .mat-macro-export:last-child {
+	margin-bottom: 0;
 }
 
 section .mobTable input[type=number] {
