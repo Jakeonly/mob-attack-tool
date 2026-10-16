@@ -793,7 +793,7 @@ export function getWeaponDamageDisplay(weaponData, isVersatile = false) {
   const [diceFormulas, damageTypes, damageTypeLabels, damageTypeOptions] = getDamageFormulaAndType(weaponData, isVersatile)
   const damageParts = diceFormulas.map((formula, i) => ({
     partIndex: i,
-    formula,
+    formula: formula.replace(/\[[^\]]*\]/g, '').trim()+' ',
     typeLabel: damageTypes[i],
     typeOptions: (damageTypeOptions[i]?.length > 1)
       ? damageTypeOptions[i].map(type => ({

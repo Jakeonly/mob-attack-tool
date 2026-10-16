@@ -140,7 +140,7 @@ input[type="number"].numTable {
 
 .mat-weapon-name-label {
 	display: grid;
-	grid-template-columns: 120px 50px 80px 125px;
+	grid-template-columns: 100px 45px 65px 150px;
 	column-gap: 5px;
 }
 
