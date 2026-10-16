@@ -81,16 +81,38 @@
 	column-gap: 5px;
 }
 
+.mat-monster-weapons-container {
+	background: rgba(247, 242, 233, 0.9);
+	border: 1px solid #c8b093;
+	border-radius: 8px;
+	padding: 8px;
+	margin: 0.5rem 0;
+	box-shadow: 0 1px 3px rgba(80, 50, 20, 0.08);
+}
+
 .mat-monster-label {
 	display: grid;
-	grid-template-columns: 40px 36px 240px;
-	column-gap: 5px;
+	grid-template-columns: 40px 36px 1fr;
+	column-gap: 8px;
+	align-items: center;
+	padding: 4px 6px;
+	background: rgba(235, 221, 202, 0.9);
+	border: 1px solid #b39470;
+	border-radius: 6px 6px 0 0;
+	font-weight: bold;
 }
 
 .mat-target-label {
 	display: grid;
 	grid-template-columns: 13% 80.8%;
-	column-gap: 5px;
+	column-gap: 8px;
+	align-items: center;
+	background: rgba(247, 242, 233, 0.9);
+	border: 1px solid #c8b093;
+	border-radius: 8px;
+	padding: 8px;
+	margin-bottom: 8px;
+	box-shadow: 0 1px 3px rgba(80, 50, 20, 0.08);
 }
 
 .mat-attacks-on-target-box {
@@ -99,10 +121,27 @@
 	flex-direction: row;
 	flex-wrap: wrap;
 	align-items: center;
-	border: 2px groove #eeede0;
-	padding: 3px;
-	margin-bottom: 0.5em;
+	border: 1px solid #c8b093;
+	background: rgba(239, 230, 216, 0.8);
+	border-radius: 6px;
+	padding: 6px;
+	margin-top: 4px;
 	min-height: 44px;
+	gap: 6px;
+}
+
+.target-attack-box {
+	background: #fcf8f2;
+	border: 1px solid #b39470;
+	border-radius: 4px;
+	padding: 2px 4px;
+	cursor: grab;
+	transition: all 0.2s ease;
+}
+
+.target-attack-box:hover {
+	border-color: #704a25;
+	box-shadow: 0 2px 4px rgba(80, 50, 20, 0.15);
 }
 
 .mat-mob-name-label-group {
@@ -119,23 +158,39 @@
 
 input[type="number"].numMonster {
 	text-align: center;
-	/*background: rgba(0, 0, 0, 0.1);*/
-	/*border-radius: 6px;*/
+	border: 1px solid #b39470;
+	border-radius: 4px;
+	background: #fcf8f2;
 }
 
 input[type="number"].numAttack {
 	text-align: center;
+	border: 1px solid #b39470;
+	border-radius: 4px;
+	background: #fcf8f2;
 }
 
 input[type="number"].numTable {
-	/*width: calc(25%);*/
 	text-align: center;
 }
 
 .mat-weapon-label {
 	display: grid;
-	grid-template-columns: 9% 6% 76% 9%;
-	column-gap: 5px;
+	grid-template-columns: 8% 5% 67% 20%;
+	column-gap: 8px;
+	align-items: center;
+	background: rgba(235, 221, 202, 0.9);
+	border: 1px solid #c8b093;
+	border-radius: 6px;
+	padding: 6px 8px;
+	margin-bottom: 6px;
+	box-shadow: 0 1px 2px rgba(80, 50, 20, 0.05);
+	transition: all 0.2s ease;
+}
+
+.mat-weapon-label:hover {
+	border-color: #8a6239;
+	box-shadow: 0 2px 5px rgba(80, 50, 20, 0.12);
 }
 
 .mat-weapon-name-label {
@@ -161,13 +216,35 @@ input[type="number"].numTable {
 }
 
 .mat-num-buttons {
-	text-align: center;
-	cursor: pointer;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	gap: 1px;
 }
 
 .decreaseNumAttack,
 .increaseNumAttack {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 16px;
+	height: 12px;
+	font-size: 8px;
+	background: #ffffff;
+	border: 1px solid #c8b093;
+	border-radius: 2px;
+	color: #4a3525;
 	cursor: pointer;
+	text-decoration: none;
+	transition: all 0.15s ease;
+}
+
+.decreaseNumAttack:hover,
+.increaseNumAttack:hover {
+	background: #d4bc98;
+	border-color: #8a6239;
+	color: #2b1d12;
 }
 
 .mat-label {
@@ -190,8 +267,17 @@ input[type="number"].numTable {
 }
 
 .mat-label.mat-col4 {
-	grid-column-start: 4;
-	grid-column-end: 4;
+    grid-column-start: 4;
+    grid-column-end: 4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+input[type="checkbox"].useWeapon {
+	cursor: pointer;
+    justify-self: center;
 }
 
 .mat-label.mat-col5 {
@@ -270,15 +356,30 @@ input[type="number"].numTable {
 	align-items: center;
 	justify-content: center;
 	gap: 2px 4px;
+	margin: 0;
 }
 
 .mat-damage-text select.mat-damage-type {
 	width: auto;
 	max-width: 100%;
-	height: 1.6em;
-	padding: 0 2px;
-	font-size: inherit;
+	height: 1.8em;
+	padding: 1px 4px;
+	font-size: 0.9em;
+	background: #fcf8f2;
+	border: 1px solid #b39470;
+	border-radius: 4px;
+	color: #3b281a;
 	cursor: pointer;
+	box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+	transition: all 0.2s ease;
+}
+
+.mat-damage-text select.mat-damage-type:hover,
+.mat-damage-text select.mat-damage-type:focus {
+	border-color: #8a6239;
+	background: #ffffff;
+	outline: none;
+	box-shadow: 0 0 3px rgba(138, 98, 57, 0.3);
 }
 
 .mat-collapsible {

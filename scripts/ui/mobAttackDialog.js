@@ -68,7 +68,7 @@ export class MobAttackDialog extends FormApplication {
       title: 'Mob Attack Tool',
       id: 'mob-attack-tool-dialog',
       template: 'modules/mob-attack-tool/templates/dialog/mat-dialog.hbs',
-      width: '505',
+      width: '600',
       height: 'auto',
       closeOnSubmit: false,
       tabs: [{ navSelector: '.tabs', contentSelector: 'form', initial: 'weapons' }],
