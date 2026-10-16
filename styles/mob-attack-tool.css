@@ -457,6 +457,21 @@ input[type="checkbox"].useWeapon {
 	box-shadow: 0 0 3px rgba(138, 98, 57, 0.3);
 }
 
+.mat-damage-summary {
+	background: rgba(235, 221, 202, 0.9);
+	border: 1px solid #b39470;
+	border-radius: 6px;
+	padding: 8px 10px;
+	margin-bottom: 8px;
+	box-shadow: 0 1px 2px rgba(80, 50, 20, 0.05);
+	transition: all 0.2s ease;
+}
+
+.mat-damage-summary:hover {
+	border-color: #8a6239;
+	box-shadow: 0 2px 5px rgba(80, 50, 20, 0.12);
+}
+
 .mat-collapsible-content-open .mat-rolltype:not(.mat-checkboxes-row):hover,
 .mat-collapsible-content-open .mat-checkboxes-row:hover,
 .mat-collapsible-content-open .mat-macro-export:hover {

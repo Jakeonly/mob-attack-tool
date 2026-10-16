@@ -1,11 +1,13 @@
 <div class="scrollable tab {{tab.cssClass}}" data-group="primary" data-tab="weapons">
     {{#with this.mat}}
-    <p class="hint">{{localize 'MAT.dialogNumSelected'}} <strong>{{this.numSelected}}</strong>
-        token{{this.pluralTokensOrNot}}. {{localize 'MAT.totalNumberOfAttacks'}}:
-        <strong>{{this.numTotalAttacks}}</strong>.
-        <br>
-        {{localize 'MAT.averageDamageIfAllAttacksHit'}}: <strong>{{this.totalAverageDamage}}</strong> {{localize 'MAT.pointsOfDamage'}}.
-    </p>
+    <div class="mat-damage-summary">
+        <p class="hint" style="margin: 0;">{{localize 'MAT.dialogNumSelected'}} <strong>{{this.numSelected}}</strong>
+            token{{this.pluralTokensOrNot}}. {{localize 'MAT.totalNumberOfAttacks'}}:
+            <strong>{{this.numTotalAttacks}}</strong>.
+        </p>
+        <p class="hint" style="margin: 4px 0 0 0;">{{localize 'MAT.averageDamageIfAllAttacksHit'}}: <strong>{{this.totalAverageDamage}}</strong> {{localize 'MAT.pointsOfDamage'}}.
+        </p>
+    </div>
     <div name="mobListOptions">
         <hr>
         {{#each this.monsters}}
