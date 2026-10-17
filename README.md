@@ -31,7 +31,7 @@ You can install this module by searching Foundry's package browser or by pasting
 
 After activating this module, a new button appears in the token controls bar.
 
-![dice icon](images/dice-icon.png)
+![Mob Attack Tool icon](images/cara-amarilla.png)
 
 By default this button is only visible to users with the GM role, but this can be changed in settings. To begin using Mob Attack Tool, make sure you have at least one token selected and at least one token targeted before you click the button.
 

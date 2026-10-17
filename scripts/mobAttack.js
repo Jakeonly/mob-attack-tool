@@ -175,7 +175,7 @@ function addMobAttackToolButton() {
       tokenBar.tools[game.i18n.localize('MAT.name')] = {
         name: game.i18n.localize('MAT.name'),
         title: game.i18n.localize('MAT.mobAttack'),
-        icon: 'fas fa-dice',
+        icon: 'mat-control-icon',
         visible: (playerAccess ? true : game.user.isGM),
         onChange: () => renderV2(),
         button: true,
@@ -186,7 +186,7 @@ function addMobAttackToolButton() {
       bar.tools.push({
         name: game.i18n.localize('MAT.name'),
         title: game.i18n.localize('MAT.mobAttack'),
-        icon: 'fas fa-dice',
+        icon: 'mat-control-icon',
         visible: (playerAccess ? true : game.user.isGM),
         onClick: async () => createAndRenderDialog(),
         button: true,

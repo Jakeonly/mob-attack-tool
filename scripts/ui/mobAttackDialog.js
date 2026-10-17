@@ -1,5 +1,5 @@
 import { moduleName } from '../mobAttack.js'
-import { checkTarget, getTargetData, prepareMonsters, prepareMobAttack, setSelectedDamageType, updateWeaponDamageDisplay, setTargetCritOption, setElementalLevel, getCritThresholdSummary } from '../utils.js'
+import { checkTarget, getTargetData, prepareMonsters, prepareMobAttack, setSelectedDamageType, updateWeaponDamageDisplay, setTargetCritOption, getTargetCritOptions, getCritThresholdSummary } from '../utils.js'
 import { rollMobAttackIndividually } from '../individualRolls.js'
 import { rollMobAttack } from '../mobRules.js'
 import { foundryEqualOrNewerThan } from '../versions.js'
@@ -235,6 +235,7 @@ export class MobAttackDialog extends FormApplication {
       pluralTokensOrNot: ((this.numSelected === 1) ? `` : `s`),
       targets: this.targets,
       noTargetACtext: noTargetACtext,
+      noTargetCritOptions: getTargetCritOptions(null),
       armorClassMod: (game.user.getFlag(moduleName, 'persistACmod') ?? game.settings.get(moduleName, 'persistACmod')) ? game.settings.get(moduleName, 'savedArmorClassMod') : this.armorClassMod,
       monsters: this.monsters,
       selectRollType: game.settings.get(moduleName, 'askRollType'),
@@ -361,20 +362,6 @@ export class MobAttackDialog extends FormApplication {
       this.render(true)
     })
 
-    // update application if the Conjure Minor Elementals spell level is changed
-    html.on('click', '.mat-elemental-level', event => event.stopPropagation())
-    html.on('change', '.mat-elemental-level', async (event) => {
-      const weapon = this.weapons[event.currentTarget.dataset.weaponId]
-      if (!weapon) return
-      setElementalLevel(weapon.actor, parseInt(event.currentTarget.value))
-      // the spell level affects every weapon of the actor
-      for (const actorWeapon of Object.values(this.weapons).filter(w => w.actor?.id === weapon.actor.id)) {
-        updateWeaponDamageDisplay(this.monsters, actorWeapon)
-      }
-      this.localUpdate = true
-      this.render(true)
-    })
-
     // update critical hit options of a target
     html.on('change', '.targetCritOption', (event) => {
       const { targetId, option } = event.currentTarget.dataset
@@ -382,10 +369,6 @@ export class MobAttackDialog extends FormApplication {
       for (const target of this.targets.filter(t => t.targetId === targetId)) {
         Object.assign(target, options)
       }
-      // uncheck the other option, they are mutually exclusive
-      html.find(`.targetCritOption[data-target-id="${targetId}"]`).each((_, other) => {
-        other.checked = options[other.dataset.option] ?? false
-      })
     })
 
     // update application if number of weapon attacks input is changed

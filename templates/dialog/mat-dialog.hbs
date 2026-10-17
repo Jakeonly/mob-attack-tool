@@ -104,6 +104,20 @@
 				</div>
 			</div> -->
 			<p class="hint">{{noTargetACtext}}</p>
+			{{#if noTargetACtext}}
+			<div class="mat-crit-options">
+				<label class="mat-crit-option" title="{{localize 'MAT.immuneToCritTitle'}}">
+					<input type="checkbox" class="targetCritOption" data-option="immuneToCrit" data-target-id=""
+						{{#if noTargetCritOptions.immuneToCrit}}checked{{/if}} />
+					{{localize 'MAT.immuneToCrit'}}
+				</label>
+				<label class="mat-crit-option" title="{{localize 'MAT.critOnlyNat20Title'}}">
+					<input type="checkbox" class="targetCritOption" data-option="critOnlyNat20" data-target-id=""
+						{{#if noTargetCritOptions.critOnlyNat20}}checked{{/if}} />
+					{{localize 'MAT.critOnlyNat20'}}
+				</label>
+			</div>
+			{{/if}}
 			<div class="form-group">
 				<label>{{localize 'MAT.acMod'}}:</label>
 				<div class="form-fields">

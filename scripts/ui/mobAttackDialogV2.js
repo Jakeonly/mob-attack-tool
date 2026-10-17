@@ -1,6 +1,6 @@
 import { moduleName } from '../mobAttack.js'
 import { foundryEqualOrNewerThan } from '../versions.js'
-import { getTargetData, prepareMonsters, prepareMobAttack, checkTarget, setSelectedDamageType, updateWeaponDamageDisplay, setTargetCritOption, setElementalLevel, getCritThresholdSummary } from '../utils.js'
+import { getTargetData, prepareMonsters, prepareMobAttack, checkTarget, setSelectedDamageType, updateWeaponDamageDisplay, setTargetCritOption, getTargetCritOptions, getCritThresholdSummary } from '../utils.js'
 import { rollMobAttack } from '../mobRules.js'
 import { rollMobAttackIndividually } from '../individualRolls.js'
 
@@ -292,6 +292,7 @@ class MobAttackDialogV2 extends HandlebarsApplicationMixin(ApplicationV2) {
       pluralTokensOrNot: ((this.mat.numSelected === 1) ? `` : `s`),
       targets: this.mat.targets,
       noTargetACtext: noTargetACtext,
+      noTargetCritOptions: getTargetCritOptions(null),
       armorClassMod: (game.user.getFlag(moduleName, 'persistACmod') ?? game.settings.get(moduleName, 'persistACmod')) ? game.settings.get(moduleName, 'savedArmorClassMod') : this.mat.armorClassMod,
       monsters: this.mat.monsters,
       selectRollType: game.settings.get(moduleName, 'askRollType'),
@@ -936,27 +937,6 @@ class MobAttackDialogV2 extends HandlebarsApplicationMixin(ApplicationV2) {
       })
     }
 
-    const elementalLevelChange = this.element.querySelectorAll('.mat-elemental-level')
-    for (const select of elementalLevelChange) {
-      // keep the click from opening the weapon sheet
-      select.addEventListener('click', e => e.stopPropagation())
-      select.addEventListener('change', (e) => {
-        e.preventDefault()
-        e.stopImmediatePropagation()
-
-        const weapon = this.mat.weapons[e.currentTarget.dataset.weaponId]
-        if (!weapon) return
-        setElementalLevel(weapon.actor, parseInt(e.currentTarget.value))
-        // the spell level affects every weapon of the actor
-        for (const actorWeapon of Object.values(this.mat.weapons).filter(w => w.actor?.id === weapon.actor.id)) {
-          updateWeaponDamageDisplay(this.mat.monsters, actorWeapon)
-        }
-
-        this.mat.localUpdate = true
-        this.render()
-      })
-    }
-
     const critOptionChange = this.element.querySelectorAll('.targetCritOption')
     for (const input of critOptionChange) {
       input.addEventListener('change', (e) => {
@@ -966,10 +946,6 @@ class MobAttackDialogV2 extends HandlebarsApplicationMixin(ApplicationV2) {
         const options = setTargetCritOption(targetId, option, e.currentTarget.checked)
         for (const target of this.mat.targets.filter(t => t.targetId === targetId)) {
           Object.assign(target, options)
-        }
-        // uncheck the other option, they are mutually exclusive
-        for (const other of this.element.querySelectorAll(`.targetCritOption[data-target-id="${targetId}"]`)) {
-          other.checked = options[other.dataset.option] ?? false
         }
       })
     }

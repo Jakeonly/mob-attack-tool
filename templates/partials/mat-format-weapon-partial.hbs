@@ -25,14 +25,6 @@
 				title="Open {{this.weaponName}} sheet">
 				{{#each this.damageParts}}
 				<div class="mat-damage-part">
-					{{#if this.levelOptions}}
-					<select class="mat-elemental-level" data-weapon-id="{{../weaponId}}"
-						title="{{localize 'MAT.elementalLevelTitle'}}">
-						{{#each this.levelOptions}}
-						<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
-						{{/each}}
-					</select>
-					{{/if}}
 					<span>{{this.formula}}</span>
 					{{#if this.typeOptions}}
 					<select class="mat-damage-type" data-weapon-id="{{../weaponId}}" data-part-index="{{this.partIndex}}"

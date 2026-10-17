@@ -35,15 +35,9 @@ export function setSelectedDamageType(item, partIndex, type) {
   damageTypeSelections.set(key, { ...damageTypeSelections.get(key), [partIndex]: type })
 }
 
-// Conjure Minor Elementals: extra melee damage of a selectable elemental type, scaling with the spell level
+// Conjure Minor Elementals: extra melee damage (as written in the effect) of a selectable elemental type
 export const ELEMENTAL_EFFECT_NAME = 'Conjure Minor Elementals'
 export const ELEMENTAL_DAMAGE_TYPES = ['acid', 'cold', 'fire', 'lightning']
-const ELEMENTAL_BASE_LEVEL = 4
-const ELEMENTAL_MAX_LEVEL = 9
-const ELEMENTAL_DICE_PER_LEVEL = 1
-
-// Selected spell level of Conjure Minor Elementals per actor id (session only)
-const elementalLevels = new Map()
 
 /**
  * Return the active Conjure Minor Elementals effect of an actor, if any
@@ -53,24 +47,6 @@ const elementalLevels = new Map()
 export function getElementalEffect(actor) {
   const effects = actor?.appliedEffects ?? actor?.effects?.filter(e => !e.disabled) ?? []
   return effects.find(e => e.name?.toLowerCase().includes(ELEMENTAL_EFFECT_NAME.toLowerCase()))
-}
-
-/**
- * Return the selected spell level of Conjure Minor Elementals for an actor
- * @param {Actor5e} actor
- * @returns {Number}
- */
-export function getElementalLevel(actor) {
-  return elementalLevels.get(actor?.id) ?? ELEMENTAL_BASE_LEVEL
-}
-
-/**
- * Set the spell level of Conjure Minor Elementals for an actor
- * @param {Actor5e} actor
- * @param {Number} level
- */
-export function setElementalLevel(actor, level) {
-  elementalLevels.set(actor.id, Math.min(Math.max(level, ELEMENTAL_BASE_LEVEL), ELEMENTAL_MAX_LEVEL))
 }
 
 /**
@@ -88,21 +64,6 @@ function getElementalBonusTerms(actor) {
 }
 
 /**
- * Scale a Conjure Minor Elementals damage term (written for the base level) to the selected spell level,
- * removing any flavor so the selected damage type can be applied
- * @param {string} term e.g. '2d8[cold]'
- * @param {Number} level spell level
- * @returns {string} e.g. '4d8' for level 6
- */
-function scaleElementalTerm(term, level) {
-  const extraDice = (level - ELEMENTAL_BASE_LEVEL) * ELEMENTAL_DICE_PER_LEVEL
-  return term
-    .replace(/\[[^\]]*\]/g, '')
-    .replace(/(\d*)d(\d+)/i, (match, number, faces) => `${(parseInt(number) || 1) + extraDice}d${faces}`)
-    .trim()
-}
-
-/**
  * Build the Conjure Minor Elementals damage parts of an actor for its weapon
  * @param {Item5e} item weapon
  * @param {Number} firstPartIndex index the first elemental part will have among the damage parts
@@ -111,16 +72,16 @@ function scaleElementalTerm(term, level) {
 function getElementalDamageParts(item, firstPartIndex) {
   const bonusTerms = getElementalBonusTerms(item.actor)
   if (!bonusTerms) return []
-  const level = getElementalLevel(item.actor)
   return bonusTerms.elementalTerms.map((term, i) => {
     const type = getSelectedDamageType(item, firstPartIndex + i, ELEMENTAL_DAMAGE_TYPES)
-    return [`${scaleElementalTerm(term, level)}[${type}]`, type, ELEMENTAL_DAMAGE_TYPES, true]
+    // use the damage of the effect as is, replacing any flavor with the selected damage type
+    return [`${term.replace(/\[[^\]]*\]/g, '').trim()}[${type}]`, type, ELEMENTAL_DAMAGE_TYPES, true]
   })
 }
 
 /**
  * The system adds the melee damage bonus of Conjure Minor Elementals as written in the effect.
- * Replace it with separate rolls using the selected spell level and damage type.
+ * Replace it with separate rolls using the selected damage type.
  * @param {Item5e} item weapon
  * @param {object} rollConfig damage roll configuration of dnd5e.preRollDamageV2
  */
@@ -144,20 +105,6 @@ function applyElementalDamageToRollConfig(item, rollConfig) {
       options: { ...rollConfig.rolls[0].options, type: damageTypeLabels[i], types: ELEMENTAL_DAMAGE_TYPES },
     })
   })
-}
-
-/**
- * Selectable spell levels of Conjure Minor Elementals
- * @param {Actor5e} actor
- * @returns {Array} options as {value, label, selected}
- */
-export function getElementalLevelOptions(actor) {
-  const selected = getElementalLevel(actor)
-  const options = []
-  for (let level = ELEMENTAL_BASE_LEVEL; level <= ELEMENTAL_MAX_LEVEL; level++) {
-    options.push({ value: level, label: `${game.i18n.localize('MAT.spellLevel')} ${level}`, selected: level === selected })
-  }
-  return options
 }
 
 /**
@@ -203,17 +150,52 @@ export function getCritThresholdSummary(monsters, weapons) {
   return [...rangesByActor].map(([actorName, ranges]) => `${actorName} ${[...ranges].join('/')}`).join(', ')
 }
 
-// Critical hit options per target token id (session only)
+// Critical hit options per target token id (session only).
+// Attacks without a target use their own key, so the options also work when nothing is targeted.
 const targetCritOptions = new Map()
+const NO_TARGET_KEY = 'no-target'
+const critOptionsKey = targetId => targetId || NO_TARGET_KEY
+
+// Flags (on the target's actor or token) that enable a critical hit option automatically,
+// e.g. set by an active effect with the attribute key 'flags.mobattack.only20'
+const CRIT_OPTION_FLAGS = {
+  immuneToCrit: 'flags.mobattack.inmunecrits',
+  critOnlyNat20: 'flags.mobattack.only20',
+}
 
 /**
- * Return a critical hit option for a target token
+ * Whether the target token has the flag that enables a critical hit option
+ * @param {string} targetId token id
+ * @param {string} option 'immuneToCrit' or 'critOnlyNat20'
+ * @returns {boolean}
+ */
+function targetHasCritOptionFlag(targetId, option) {
+  const token = targetId ? canvas.tokens?.get(targetId) : null
+  if (!token) return false
+  const value = foundry.utils.getProperty(token.actor ?? {}, CRIT_OPTION_FLAGS[option])
+    ?? foundry.utils.getProperty(token.document ?? {}, CRIT_OPTION_FLAGS[option])
+  // active effects may store the value as a string
+  return !!value && !['false', '0'].includes(`${value}`.trim().toLowerCase())
+}
+
+/**
+ * Return a critical hit option for a target token.
+ * A checkbox changed in the dialog wins, otherwise the option follows the target's flag.
  * @param {string} targetId token id
  * @param {string} option 'immuneToCrit' or 'critOnlyNat20'
  * @returns {boolean}
  */
 export function getTargetCritOption(targetId, option) {
-  return targetCritOptions.get(targetId)?.[option] ?? false
+  return targetCritOptions.get(critOptionsKey(targetId))?.[option] ?? targetHasCritOptionFlag(targetId, option)
+}
+
+/**
+ * Return all critical hit options for a target token
+ * @param {string} targetId token id (empty for attacks without a target)
+ * @returns {{immuneToCrit: boolean, critOnlyNat20: boolean}}
+ */
+export function getTargetCritOptions(targetId) {
+  return Object.fromEntries(CRIT_OPTIONS.map(option => [option, getTargetCritOption(targetId, option)]))
 }
 
 /**
@@ -223,13 +205,8 @@ export function getTargetCritOption(targetId, option) {
  * @param {boolean} value
  */
 export function setTargetCritOption(targetId, option, value) {
-  const options = { ...targetCritOptions.get(targetId), [option]: value }
-  // Both options are mutually exclusive
-  if (value) {
-    for (const other of CRIT_OPTIONS.filter(o => o !== option)) options[other] = false
-  }
-  targetCritOptions.set(targetId, options)
-  return options
+  targetCritOptions.set(critOptionsKey(targetId), { ...targetCritOptions.get(critOptionsKey(targetId)), [option]: value })
+  return getTargetCritOptions(targetId)
 }
 
 export const CRIT_OPTIONS = ['immuneToCrit', 'critOnlyNat20']
@@ -1018,7 +995,7 @@ export function getDamageFormulaAndType(weaponData, isVersatile = false) {
  *  with the selectable damage types when the part allows more than one)
  */
 export function getWeaponDamageDisplay(weaponData, isVersatile = false) {
-  const [diceFormulas, damageTypes, damageTypeLabels, damageTypeOptions, elementalParts] = getDamageFormulaAndType(weaponData, isVersatile)
+  const [diceFormulas, damageTypes, damageTypeLabels, damageTypeOptions] = getDamageFormulaAndType(weaponData, isVersatile)
   const damageParts = diceFormulas.map((formula, i) => ({
     partIndex: i,
     formula: formula.replace(/\[[^\]]*\]/g, '').trim()+' ',
@@ -1030,7 +1007,6 @@ export function getWeaponDamageDisplay(weaponData, isVersatile = false) {
           selected: type === damageTypeLabels[i],
         }))
       : null,
-    levelOptions: elementalParts[i] ? getElementalLevelOptions(weaponData.actor) : null,
   }))
   const weaponDamageText = damageParts.map(p => `${p.formula} ${p.typeLabel}`).join('<br>')
   return { weaponDamageText, damageParts }
