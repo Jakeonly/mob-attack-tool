@@ -1,5 +1,5 @@
 import { moduleName } from './mobAttack.js'
-import { endGroupedMobTurn, getDamageFormulaAndType, sendChatMessage, getAttackBonus, callMidiMacro, getAttackData, getDamageOptions, formatAttackTargets, getTextFromAttackBonus, isTargetCritImmune, isTargetCritOnlyNat20 } from './utils.js'
+import { endGroupedMobTurn, getDamageFormulaAndType, sendChatMessage, getAttackBonus, callMidiMacro, getAttackData, getDamageOptions, formatAttackTargets, getTextFromAttackBonus, isTargetCritImmune, isTargetCritOnlyNat20, getCritThreshold } from './utils.js'
 import { foundryEqualOrNewerThan } from './versions.js'
 
 const { getProperty } = foundry.utils
@@ -56,13 +56,7 @@ export async function rollMobAttackIndividually(data) {
       let atkRollData = []
 
       // Determine crit threshold
-      let critThreshold = 20
-      if (weaponData.type === 'weapon' && weaponData.actor.getFlag('dnd5e', 'weaponCriticalThreshold') > 0) {
-        critThreshold = weaponData.actor.getFlag('dnd5e', 'weaponCriticalThreshold')
-      }
-      else if (weaponData.type === 'spell' && weaponData.actor.getFlag('dnd5e', 'spellCriticalThreshold') > 0) {
-        critThreshold = weaponData.actor.getFlag('dnd5e', 'spellCriticalThreshold')
-      }
+      let critThreshold = getCritThreshold(weaponData)
       // Ignore expanded critical ranges against this target
       if (isTargetCritOnlyNat20(value[j]?.targetId)) critThreshold = 20
       // Crit-immune targets ignore the whole critical range (including expanded ranges)
@@ -225,15 +219,7 @@ export async function processIndividualDamageRolls(data, weaponData, finalAttack
   if (game.modules.get('midi-qol')?.active && game.settings.get(moduleName, 'enableMidi')) midi_QOL_Active = true
 
   // Determine crit threshold
-  let critThreshold = 20
-  if (weaponData.type === 'weapon' && weaponData.actor.getFlag('dnd5e', 'weaponCriticalThreshold') > 0) {
-    critThreshold = weaponData.actor.getFlag('dnd5e', 'weaponCriticalThreshold')
-    console.log('critThreshold weapon: ', critThreshold)
-  }
-  else if (weaponData.type === 'spell' && weaponData.actor.getFlag('dnd5e', 'spellCriticalThreshold') > 0) {
-    critThreshold = weaponData.actor.getFlag('dnd5e', 'spellCriticalThreshold')
-    console.log('critThreshold spell: ', critThreshold)
-  }
+  let critThreshold = getCritThreshold(weaponData)
   // Ignore expanded critical ranges against this target
   if (isTargetCritOnlyNat20(targetId)) critThreshold = 20
 

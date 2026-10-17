@@ -1,5 +1,5 @@
 import { moduleName } from '../mobAttack.js'
-import { checkTarget, getTargetData, prepareMonsters, prepareMobAttack, setSelectedDamageType, updateWeaponDamageDisplay, setTargetCritOption } from '../utils.js'
+import { checkTarget, getTargetData, prepareMonsters, prepareMobAttack, setSelectedDamageType, updateWeaponDamageDisplay, setTargetCritOption, setElementalLevel, getCritThresholdSummary } from '../utils.js'
 import { rollMobAttackIndividually } from '../individualRolls.js'
 import { rollMobAttack } from '../mobRules.js'
 import { foundryEqualOrNewerThan } from '../versions.js'
@@ -243,6 +243,7 @@ export class MobAttackDialog extends FormApplication {
       collapsiblePlusMinus: this.collapsiblePlusMinus,
       numTotalAttacks: this.numTotalAttacks,
       totalAverageDamage: this.totalAverageDamage,
+      critThresholdSummary: getCritThresholdSummary(this.monsters, this.weapons),
       rollTypeSelection: this.rollTypeSelection,
       tripleCriticalSelection: this.tripleCriticalSelection,
       extraDiceSelection: this.extraDiceSelection,
@@ -356,6 +357,20 @@ export class MobAttackDialog extends FormApplication {
       if (!weapon) return
       setSelectedDamageType(weapon, parseInt(partIndex), event.currentTarget.value)
       updateWeaponDamageDisplay(this.monsters, weapon)
+      this.localUpdate = true
+      this.render(true)
+    })
+
+    // update application if the Conjure Minor Elementals spell level is changed
+    html.on('click', '.mat-elemental-level', event => event.stopPropagation())
+    html.on('change', '.mat-elemental-level', async (event) => {
+      const weapon = this.weapons[event.currentTarget.dataset.weaponId]
+      if (!weapon) return
+      setElementalLevel(weapon.actor, parseInt(event.currentTarget.value))
+      // the spell level affects every weapon of the actor
+      for (const actorWeapon of Object.values(this.weapons).filter(w => w.actor?.id === weapon.actor.id)) {
+        updateWeaponDamageDisplay(this.monsters, actorWeapon)
+      }
       this.localUpdate = true
       this.render(true)
     })

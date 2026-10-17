@@ -7,6 +7,10 @@
         </p>
         <p class="hint" style="margin: 4px 0 0 0;">{{localize 'MAT.averageDamageIfAllAttacksHit'}}: <strong>{{this.totalAverageDamage}}</strong> {{localize 'MAT.pointsOfDamage'}}.
         </p>
+        {{#if this.critThresholdSummary}}
+        <p class="hint" style="margin: 4px 0 0 0;">{{localize 'MAT.critThreshold'}}: <strong>{{this.critThresholdSummary}}</strong>.
+        </p>
+        {{/if}}
     </div>
     <div name="mobListOptions">
         <hr>

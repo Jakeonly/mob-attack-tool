@@ -35,6 +35,174 @@ export function setSelectedDamageType(item, partIndex, type) {
   damageTypeSelections.set(key, { ...damageTypeSelections.get(key), [partIndex]: type })
 }
 
+// Conjure Minor Elementals: extra melee damage of a selectable elemental type, scaling with the spell level
+export const ELEMENTAL_EFFECT_NAME = 'Conjure Minor Elementals'
+export const ELEMENTAL_DAMAGE_TYPES = ['acid', 'cold', 'fire', 'lightning']
+const ELEMENTAL_BASE_LEVEL = 4
+const ELEMENTAL_MAX_LEVEL = 9
+const ELEMENTAL_DICE_PER_LEVEL = 1
+
+// Selected spell level of Conjure Minor Elementals per actor id (session only)
+const elementalLevels = new Map()
+
+/**
+ * Return the active Conjure Minor Elementals effect of an actor, if any
+ * @param {Actor5e} actor
+ * @returns {ActiveEffect|undefined}
+ */
+export function getElementalEffect(actor) {
+  const effects = actor?.appliedEffects ?? actor?.effects?.filter(e => !e.disabled) ?? []
+  return effects.find(e => e.name?.toLowerCase().includes(ELEMENTAL_EFFECT_NAME.toLowerCase()))
+}
+
+/**
+ * Return the selected spell level of Conjure Minor Elementals for an actor
+ * @param {Actor5e} actor
+ * @returns {Number}
+ */
+export function getElementalLevel(actor) {
+  return elementalLevels.get(actor?.id) ?? ELEMENTAL_BASE_LEVEL
+}
+
+/**
+ * Set the spell level of Conjure Minor Elementals for an actor
+ * @param {Actor5e} actor
+ * @param {Number} level
+ */
+export function setElementalLevel(actor, level) {
+  elementalLevels.set(actor.id, Math.min(Math.max(level, ELEMENTAL_BASE_LEVEL), ELEMENTAL_MAX_LEVEL))
+}
+
+/**
+ * Split the actor's melee weapon damage bonus into the terms granted by Conjure Minor Elementals
+ * (the dice terms) and the remaining terms
+ * @param {Actor5e} actor
+ * @returns {{elementalTerms: string[], otherTerms: string[]}|null} null if the actor doesn't have the effect
+ */
+function getElementalBonusTerms(actor) {
+  if (!getElementalEffect(actor)) return null
+  const mwakBonus = foundry.utils.getProperty(actor, 'system.bonuses.mwak.damage') ?? ''
+  const terms = mwakBonus.split(/\s*\+\s*/).map(t => t.trim()).filter(Boolean)
+  const isDice = t => /\d*d\d+/i.test(t)
+  return { elementalTerms: terms.filter(isDice), otherTerms: terms.filter(t => !isDice(t)) }
+}
+
+/**
+ * Scale a Conjure Minor Elementals damage term (written for the base level) to the selected spell level,
+ * removing any flavor so the selected damage type can be applied
+ * @param {string} term e.g. '2d8[cold]'
+ * @param {Number} level spell level
+ * @returns {string} e.g. '4d8' for level 6
+ */
+function scaleElementalTerm(term, level) {
+  const extraDice = (level - ELEMENTAL_BASE_LEVEL) * ELEMENTAL_DICE_PER_LEVEL
+  return term
+    .replace(/\[[^\]]*\]/g, '')
+    .replace(/(\d*)d(\d+)/i, (match, number, faces) => `${(parseInt(number) || 1) + extraDice}d${faces}`)
+    .trim()
+}
+
+/**
+ * Build the Conjure Minor Elementals damage parts of an actor for its weapon
+ * @param {Item5e} item weapon
+ * @param {Number} firstPartIndex index the first elemental part will have among the damage parts
+ * @returns {Array} damage parts as [formula, type, types, isElemental]
+ */
+function getElementalDamageParts(item, firstPartIndex) {
+  const bonusTerms = getElementalBonusTerms(item.actor)
+  if (!bonusTerms) return []
+  const level = getElementalLevel(item.actor)
+  return bonusTerms.elementalTerms.map((term, i) => {
+    const type = getSelectedDamageType(item, firstPartIndex + i, ELEMENTAL_DAMAGE_TYPES)
+    return [`${scaleElementalTerm(term, level)}[${type}]`, type, ELEMENTAL_DAMAGE_TYPES, true]
+  })
+}
+
+/**
+ * The system adds the melee damage bonus of Conjure Minor Elementals as written in the effect.
+ * Replace it with separate rolls using the selected spell level and damage type.
+ * @param {Item5e} item weapon
+ * @param {object} rollConfig damage roll configuration of dnd5e.preRollDamageV2
+ */
+function applyElementalDamageToRollConfig(item, rollConfig) {
+  const bonusTerms = getElementalBonusTerms(item.actor)
+  if (!bonusTerms?.elementalTerms.length || !rollConfig.rolls?.length) return
+  const mwakBonus = foundry.utils.getProperty(item.actor, 'system.bonuses.mwak.damage').trim()
+
+  // only replace the bonus if the system actually added it to this roll
+  const roll = rollConfig.rolls.find(r => r.parts?.some(p => `${p}`.trim() === mwakBonus))
+  if (!roll) return
+  const index = roll.parts.findIndex(p => `${p}`.trim() === mwakBonus)
+  if (bonusTerms.otherTerms.length > 0) roll.parts[index] = bonusTerms.otherTerms.join(' + ')
+  else roll.parts.splice(index, 1)
+
+  const [diceFormulas, , damageTypeLabels, , elementalParts] = getDamageFormulaAndType(item)
+  elementalParts.forEach((isElemental, i) => {
+    if (!isElemental) return
+    rollConfig.rolls.push({
+      parts: [diceFormulas[i].replace(/\[[^\]]*\]/g, '')],
+      options: { ...rollConfig.rolls[0].options, type: damageTypeLabels[i], types: ELEMENTAL_DAMAGE_TYPES },
+    })
+  })
+}
+
+/**
+ * Selectable spell levels of Conjure Minor Elementals
+ * @param {Actor5e} actor
+ * @returns {Array} options as {value, label, selected}
+ */
+export function getElementalLevelOptions(actor) {
+  const selected = getElementalLevel(actor)
+  const options = []
+  for (let level = ELEMENTAL_BASE_LEVEL; level <= ELEMENTAL_MAX_LEVEL; level++) {
+    options.push({ value: level, label: `${game.i18n.localize('MAT.spellLevel')} ${level}`, selected: level === selected })
+  }
+  return options
+}
+
+/**
+ * Return the critical hit threshold of an item, based on the actor's dnd5e flags
+ * @param {Item5e} item weapon or spell
+ * @returns {Number} lowest natural d20 roll that is a critical hit
+ */
+export function getCritThreshold(item) {
+  const flag = item.type === 'spell' ? 'spellCriticalThreshold' : (item.type === 'weapon' ? 'weaponCriticalThreshold' : null)
+  const threshold = flag ? item.actor?.getFlag('dnd5e', flag) : null
+  return threshold > 0 ? threshold : 20
+}
+
+/**
+ * Format a critical hit threshold as a d20 range, e.g. 19 -> '19-20'
+ * @param {Number} threshold
+ * @returns {string}
+ */
+function formatCritRange(threshold) {
+  return threshold >= 20 ? '20' : `${threshold}-20`
+}
+
+/**
+ * Summary of the critical hit thresholds of the selected weapons.
+ * A single range if all weapons share it, otherwise the ranges per actor.
+ * @param {object} monsters - monsters data as prepared by prepareMonsters
+ * @param {object} weapons - weapons by item id
+ * @returns {string} e.g. '19-20' or 'Goblin 20, Hobgoblin 19-20'
+ */
+export function getCritThresholdSummary(monsters, weapons) {
+  const rangesByActor = new Map()
+  for (const monsterData of Object.values(monsters ?? {})) {
+    for (const weaponLabel of Object.values(monsterData.weapons ?? {})) {
+      const item = weapons?.[weaponLabel.weaponId]
+      if (weaponLabel.useButtonValue !== 'checked' || !item) continue
+      const actorName = item.actor?.name ?? ''
+      if (!rangesByActor.has(actorName)) rangesByActor.set(actorName, new Set())
+      rangesByActor.get(actorName).add(formatCritRange(getCritThreshold(item)))
+    }
+  }
+  const allRanges = new Set([...rangesByActor.values()].flatMap(ranges => [...ranges]))
+  if (allRanges.size <= 1) return [...allRanges][0] ?? ''
+  return [...rangesByActor].map(([actorName, ranges]) => `${actorName} ${[...ranges].join('/')}`).join(', ')
+}
+
 // Critical hit options per target token id (session only)
 const targetCritOptions = new Map()
 
@@ -157,6 +325,7 @@ export function getAttackData(item) {
           rollConfig.rolls?.forEach((roll, i) => {
             if (roll.options?.types?.includes(selectedTypes[i])) roll.options.type = selectedTypes[i]
           })
+          applyElementalDamageToRollConfig(item, rollConfig)
         })
         try {
           return await rollDamage(...args)
@@ -743,6 +912,7 @@ export function getDamageFormulaAndType(weaponData, isVersatile = false) {
   let damageTypes = []
   let damageTypeLabels = []
   let damageTypeOptions = []
+  let elementalParts = []
   let lengthIndex = 0
   let hasEffect = false
 
@@ -792,22 +962,29 @@ export function getDamageFormulaAndType(weaponData, isVersatile = false) {
       foundry.utils.getProperty(weaponData.actor, 'system.bonuses.rwak.damage'),
     ].filter(Boolean)
 
+    // Conjure Minor Elementals dice get their own damage parts (selectable type and spell level)
+    const elementalTerms = getElementalBonusTerms(weaponData.actor)?.elementalTerms ?? []
+
     const uniqueTerms = [...new Set(
       bonuses
         .flatMap(b => b.split(/\s*\+\s*/))
         .map(t => t.trim())
-        .filter(Boolean)
+        .filter(t => t && !elementalTerms.includes(t))
     )]
 
-    const finalBonus = uniqueTerms.join(' + ')
-    const bonusFormated = convertDamageString(finalBonus)
-    damageParts.push(...bonusFormated.map(([formula, type]) => [formula, type || mainType, []]))
+    if (uniqueTerms.length > 0) {
+      const finalBonus = uniqueTerms.join(' + ')
+      const bonusFormated = convertDamageString(finalBonus)
+      damageParts.push(...bonusFormated.map(([formula, type]) => [formula, type || mainType, []]))
+    }
+    damageParts.push(...getElementalDamageParts(weaponData, damageParts.length))
   }
 
   attackData.damage.parts = damageParts
 
   for (let diceFormulaParts of attackData.damage.parts) {
     damageTypeOptions.push(diceFormulaParts[2] ?? [])
+    elementalParts.push(diceFormulaParts[3] ?? false)
     damageTypeLabels.push(diceFormulaParts[1])
     damageTypes.push(diceFormulaParts[1].capitalize())
     if (weaponData.type == 'spell') {
@@ -830,7 +1007,7 @@ export function getDamageFormulaAndType(weaponData, isVersatile = false) {
     }
     lengthIndex++
   }
-  return [diceFormulas, damageTypes, damageTypeLabels, damageTypeOptions]
+  return [diceFormulas, damageTypes, damageTypeLabels, damageTypeOptions, elementalParts]
 }
 
 /**
@@ -841,7 +1018,7 @@ export function getDamageFormulaAndType(weaponData, isVersatile = false) {
  *  with the selectable damage types when the part allows more than one)
  */
 export function getWeaponDamageDisplay(weaponData, isVersatile = false) {
-  const [diceFormulas, damageTypes, damageTypeLabels, damageTypeOptions] = getDamageFormulaAndType(weaponData, isVersatile)
+  const [diceFormulas, damageTypes, damageTypeLabels, damageTypeOptions, elementalParts] = getDamageFormulaAndType(weaponData, isVersatile)
   const damageParts = diceFormulas.map((formula, i) => ({
     partIndex: i,
     formula: formula.replace(/\[[^\]]*\]/g, '').trim()+' ',
@@ -853,6 +1030,7 @@ export function getWeaponDamageDisplay(weaponData, isVersatile = false) {
           selected: type === damageTypeLabels[i],
         }))
       : null,
+    levelOptions: elementalParts[i] ? getElementalLevelOptions(weaponData.actor) : null,
   }))
   const weaponDamageText = damageParts.map(p => `${p.formula} ${p.typeLabel}`).join('<br>')
   return { weaponDamageText, damageParts }

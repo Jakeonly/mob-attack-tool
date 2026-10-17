@@ -1,6 +1,6 @@
 import { moduleName } from '../mobAttack.js'
 import { foundryEqualOrNewerThan } from '../versions.js'
-import { getTargetData, prepareMonsters, prepareMobAttack, checkTarget, setSelectedDamageType, updateWeaponDamageDisplay, setTargetCritOption } from '../utils.js'
+import { getTargetData, prepareMonsters, prepareMobAttack, checkTarget, setSelectedDamageType, updateWeaponDamageDisplay, setTargetCritOption, setElementalLevel, getCritThresholdSummary } from '../utils.js'
 import { rollMobAttack } from '../mobRules.js'
 import { rollMobAttackIndividually } from '../individualRolls.js'
 
@@ -300,6 +300,7 @@ class MobAttackDialogV2 extends HandlebarsApplicationMixin(ApplicationV2) {
       collapsiblePlusMinus: this.mat.collapsiblePlusMinus,
       numTotalAttacks: this.mat.numTotalAttacks,
       totalAverageDamage: this.mat.totalAverageDamage,
+      critThresholdSummary: getCritThresholdSummary(this.mat.monsters, this.mat.weapons),
       rollTypeSelection: this.mat.rollTypeSelection,
     }
     matContext.isGM = game.user.isGM
@@ -929,6 +930,27 @@ class MobAttackDialogV2 extends HandlebarsApplicationMixin(ApplicationV2) {
         if (!weapon) return
         setSelectedDamageType(weapon, parseInt(partIndex), e.currentTarget.value)
         updateWeaponDamageDisplay(this.mat.monsters, weapon)
+
+        this.mat.localUpdate = true
+        this.render()
+      })
+    }
+
+    const elementalLevelChange = this.element.querySelectorAll('.mat-elemental-level')
+    for (const select of elementalLevelChange) {
+      // keep the click from opening the weapon sheet
+      select.addEventListener('click', e => e.stopPropagation())
+      select.addEventListener('change', (e) => {
+        e.preventDefault()
+        e.stopImmediatePropagation()
+
+        const weapon = this.mat.weapons[e.currentTarget.dataset.weaponId]
+        if (!weapon) return
+        setElementalLevel(weapon.actor, parseInt(e.currentTarget.value))
+        // the spell level affects every weapon of the actor
+        for (const actorWeapon of Object.values(this.mat.weapons).filter(w => w.actor?.id === weapon.actor.id)) {
+          updateWeaponDamageDisplay(this.mat.monsters, actorWeapon)
+        }
 
         this.mat.localUpdate = true
         this.render()
