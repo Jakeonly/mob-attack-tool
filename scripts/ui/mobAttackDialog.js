@@ -220,6 +220,7 @@ export class MobAttackDialog extends FormApplication {
         }
         this.targets[i].targetTotalNumAttacks = targetTotalNumAttacks
         this.targets[i].targetTotalAverageDamage = targetTotalAverageDamage
+        Object.assign(this.targets[i], getTargetCritOptions(this.targets[i].targetId))
       }
     }
 

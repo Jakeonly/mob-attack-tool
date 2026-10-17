@@ -159,12 +159,23 @@ const critOptionsKey = targetId => targetId || NO_TARGET_KEY
 // Flags (on the target's actor or token) that enable a critical hit option automatically,
 // e.g. set by an active effect with the attribute key 'flags.mobattack.only20'
 const CRIT_OPTION_FLAGS = {
-  immuneToCrit: 'flags.mobattack.inmunecrits',
-  critOnlyNat20: 'flags.mobattack.only20',
+  immuneToCrit: 'mobattack.inmunecrits',
+  critOnlyNat20: 'mobattack.only20',
 }
 
 /**
- * Whether the target token has the flag that enables a critical hit option
+ * Whether a flag value enables an option (active effects may store it as a string)
+ * @param {*} value
+ * @returns {boolean}
+ */
+function isFlagEnabled(value) {
+  return value !== undefined && value !== null && value !== '' && !['false', '0'].includes(`${value}`.trim().toLowerCase())
+}
+
+/**
+ * Whether the target token has the flag that enables a critical hit option.
+ * Looks at the flags of the actor and the token, and at the changes of the actor's active effects,
+ * accepting both 'flags.mobattack.x' and 'flag.mobattack.x' as the attribute key.
  * @param {string} targetId token id
  * @param {string} option 'immuneToCrit' or 'critOnlyNat20'
  * @returns {boolean}
@@ -172,21 +183,37 @@ const CRIT_OPTION_FLAGS = {
 function targetHasCritOptionFlag(targetId, option) {
   const token = targetId ? canvas.tokens?.get(targetId) : null
   if (!token) return false
-  const value = foundry.utils.getProperty(token.actor ?? {}, CRIT_OPTION_FLAGS[option])
-    ?? foundry.utils.getProperty(token.document ?? {}, CRIT_OPTION_FLAGS[option])
-  // active effects may store the value as a string
-  return !!value && !['false', '0'].includes(`${value}`.trim().toLowerCase())
+  const flag = CRIT_OPTION_FLAGS[option]
+  const actor = token.actor
+
+  for (const document of [actor, token.document]) {
+    for (const prefix of ['flags', 'flag']) {
+      if (isFlagEnabled(foundry.utils.getProperty(document ?? {}, `${prefix}.${flag}`))) return true
+    }
+  }
+
+  // the change may not be applied to the actor data if the key isn't a valid path, so read the effects too
+  const effects = actor?.appliedEffects ?? actor?.effects?.filter(e => !e.disabled) ?? []
+  const matchesFlag = (key = '') => {
+    const normalizedKey = key.trim().toLowerCase()
+    return normalizedKey === flag || normalizedKey.endsWith(`.${flag}`)
+  }
+  return effects.some(effect => effect.changes?.some(change => matchesFlag(change.key) && isFlagEnabled(change.value)))
 }
 
 /**
  * Return a critical hit option for a target token.
- * A checkbox changed in the dialog wins, otherwise the option follows the target's flag.
+ * A checkbox changed in the dialog wins while the target's flag stays the same,
+ * otherwise the option follows the target's flag.
  * @param {string} targetId token id
  * @param {string} option 'immuneToCrit' or 'critOnlyNat20'
  * @returns {boolean}
  */
 export function getTargetCritOption(targetId, option) {
-  return targetCritOptions.get(critOptionsKey(targetId))?.[option] ?? targetHasCritOptionFlag(targetId, option)
+  const flagValue = targetHasCritOptionFlag(targetId, option)
+  const override = targetCritOptions.get(critOptionsKey(targetId))?.[option]
+  if (override && override.flagValue === flagValue) return override.value
+  return flagValue
 }
 
 /**
@@ -205,7 +232,9 @@ export function getTargetCritOptions(targetId) {
  * @param {boolean} value
  */
 export function setTargetCritOption(targetId, option, value) {
-  targetCritOptions.set(critOptionsKey(targetId), { ...targetCritOptions.get(critOptionsKey(targetId)), [option]: value })
+  // remember the flag at the time of the change, so adding or removing the flag later updates the checkbox again
+  const override = { value, flagValue: targetHasCritOptionFlag(targetId, option) }
+  targetCritOptions.set(critOptionsKey(targetId), { ...targetCritOptions.get(critOptionsKey(targetId)), [option]: override })
   return getTargetCritOptions(targetId)
 }
 

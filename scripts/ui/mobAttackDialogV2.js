@@ -277,6 +277,7 @@ class MobAttackDialogV2 extends HandlebarsApplicationMixin(ApplicationV2) {
         }
         this.mat.targets[i].targetTotalNumAttacks = targetTotalNumAttacks
         this.mat.targets[i].targetTotalAverageDamage = targetTotalAverageDamage
+        Object.assign(this.mat.targets[i], getTargetCritOptions(this.mat.targets[i].targetId))
       }
     }
 
