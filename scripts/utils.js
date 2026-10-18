@@ -38,29 +38,52 @@ export function setSelectedDamageType(item, partIndex, type) {
 // Conjure Minor Elementals: extra melee damage (as written in the effect) of a selectable elemental type
 export const ELEMENTAL_EFFECT_NAME = 'Conjure Minor Elementals'
 export const ELEMENTAL_DAMAGE_TYPES = ['acid', 'cold', 'fire', 'lightning']
+// effect name with the spell level, from 'Conjure Minor Elementals 4' to 'Conjure Minor Elementals 9'
+const ELEMENTAL_EFFECT_NAME_REGEX = /^conjure minor elementals\s+([4-9])$/i
+const ELEMENTAL_BONUS_KEY = 'system.bonuses.mwak.damage'
+
+const splitFormulaTerms = formula => `${formula ?? ''}`.split(/\s*\+\s*/).map(t => t.trim()).filter(Boolean)
 
 /**
- * Return the active Conjure Minor Elementals effect of an actor, if any
+ * Return the changes of an effect that add melee weapon damage
+ * @param {ActiveEffect} effect
+ * @returns {Array} changes with the key system.bonuses.mwak.damage and a value
+ */
+function getElementalBonusChanges(effect) {
+  return (effect.changes ?? []).filter(c => c.key?.trim() === ELEMENTAL_BONUS_KEY && `${c.value ?? ''}`.trim())
+}
+
+/**
+ * Return the active Conjure Minor Elementals effect of an actor, if any.
+ * The effect must be named 'Conjure Minor Elementals <level>' with a level from 4 to 9
+ * AND change system.bonuses.mwak.damage.
  * @param {Actor5e} actor
  * @returns {ActiveEffect|undefined}
  */
 export function getElementalEffect(actor) {
   const effects = actor?.appliedEffects ?? actor?.effects?.filter(e => !e.disabled) ?? []
-  return effects.find(e => e.name?.toLowerCase().includes(ELEMENTAL_EFFECT_NAME.toLowerCase()))
+  return effects.find(e => ELEMENTAL_EFFECT_NAME_REGEX.test(e.name?.trim() ?? '') && getElementalBonusChanges(e).length > 0)
 }
 
 /**
- * Split the actor's melee weapon damage bonus into the terms granted by Conjure Minor Elementals
- * (the dice terms) and the remaining terms
+ * Split the actor's melee weapon damage bonus into the dice terms granted by the Conjure Minor Elementals
+ * effect and the remaining terms (from other effects or the actor itself)
  * @param {Actor5e} actor
  * @returns {{elementalTerms: string[], otherTerms: string[]}|null} null if the actor doesn't have the effect
  */
 function getElementalBonusTerms(actor) {
-  if (!getElementalEffect(actor)) return null
-  const mwakBonus = foundry.utils.getProperty(actor, 'system.bonuses.mwak.damage') ?? ''
-  const terms = mwakBonus.split(/\s*\+\s*/).map(t => t.trim()).filter(Boolean)
+  const effect = getElementalEffect(actor)
+  if (!effect) return null
   const isDice = t => /\d*d\d+/i.test(t)
-  return { elementalTerms: terms.filter(isDice), otherTerms: terms.filter(t => !isDice(t)) }
+  const elementalTerms = getElementalBonusChanges(effect).flatMap(c => splitFormulaTerms(c.value)).filter(isDice)
+
+  // remove the effect's terms (once each) from the total bonus, the rest is kept as a normal bonus
+  const otherTerms = splitFormulaTerms(foundry.utils.getProperty(actor, ELEMENTAL_BONUS_KEY))
+  for (const term of elementalTerms) {
+    const index = otherTerms.indexOf(term)
+    if (index >= 0) otherTerms.splice(index, 1)
+  }
+  return { elementalTerms, otherTerms }
 }
 
 /**
