@@ -290,6 +290,53 @@ export function isTargetAutoCrit(targetId) {
   return getTargetCritOption(targetId, 'autoCrit')
 }
 
+const SUMMARY_COLORS = {
+  tripleCritical: '#9b59b6',
+  extraDice: '#3498db',
+  doubleDamage: '#e74c3c',
+  advantage: '#2ecc71',
+  normal: '#bdc3c7',
+  disadvantage: '#e67e22',
+  elvenAccuracy: '#1abc9c',
+  immuneToCrit: '#7f8c8d',
+  critOnlyNat20: '#f1c40f',
+  autoCrit: '#ff4757',
+  acModifier: '#5dade2',
+}
+
+/**
+ * Build the summary of the options chosen for a mob attack, shown at the end of the results message
+ * @param {object} data mob attack data
+ * @param {boolean} includeCritOptions whether to include the targets' critical hit options
+ * @returns {{label: string, color: string}[]}
+ */
+export function getAttackSummary(data, includeCritOptions = true) {
+  const summary = []
+  const add = (key, label) => summary.push({ label, color: SUMMARY_COLORS[key] })
+
+  if (data.tripleCritical ?? data.data?.tripleCritical) add('tripleCritical', 'TripleCritical')
+  if (data.extraDice ?? data.data?.extraDice) add('extraDice', 'ExtraDice')
+  if (data.doubleDamage ?? data.data?.doubleDamage) add('doubleDamage', 'DoubleDamage')
+
+  if (data.withAdvantage) add('advantage', 'Ventaja')
+  else if (data.withElvenAcurracy) add('elvenAccuracy', 'ElvenAccuracy')
+  else if (data.withDisadvantage) add('disadvantage', 'Desventaja')
+  else add('normal', 'Normal')
+
+  if (includeCritOptions) {
+    const targetIds = new Set(Object.values(data.attacks ?? {}).flat().map(attack => attack?.targetId ?? ''))
+    const anyTarget = check => [...targetIds].some(check)
+    if (anyTarget(isTargetCritImmune)) add('immuneToCrit', 'InmuneCrit')
+    if (anyTarget(isTargetCritOnlyNat20)) add('critOnlyNat20', 'Only20')
+    if (anyTarget(isTargetAutoCrit)) add('autoCrit', 'AutoCrit')
+  }
+
+  const armorClassMod = game.settings.get(moduleName, 'savedArmorClassMod')
+  if (armorClassMod) add('acModifier', `AC Modifier: ${armorClassMod}`)
+
+  return summary
+}
+
 /**
  * For a given weapon/spell/item, return the data required to perform an attack
  * This was part of "WeaponData" in v3 and migrated to "AttackActivity" on the

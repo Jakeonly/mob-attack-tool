@@ -24,3 +24,7 @@
 {{/each}}
 <hr>
 <strong>Conclusion:</strong> {{totalHitAttacks}}{{totalPluralOrNot}}
+{{#if summary.length}}
+<hr>
+<strong>Resumen:</strong> {{#each summary}}<span style="color: {{this.color}};">{{this.label}}</span>{{#unless @last}}, {{/unless}}{{/each}}
+{{/if}}

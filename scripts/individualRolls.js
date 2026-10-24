@@ -1,5 +1,5 @@
 import { moduleName } from './mobAttack.js'
-import { endGroupedMobTurn, getDamageFormulaAndType, sendChatMessage, getAttackBonus, callMidiMacro, getAttackData, getDamageOptions, formatAttackTargets, getTextFromAttackBonus, isTargetCritImmune, isTargetCritOnlyNat20, isTargetAutoCrit, getCritThreshold } from './utils.js'
+import { endGroupedMobTurn, getDamageFormulaAndType, sendChatMessage, getAttackBonus, callMidiMacro, getAttackData, getDamageOptions, formatAttackTargets, getTextFromAttackBonus, isTargetCritImmune, isTargetCritOnlyNat20, isTargetAutoCrit, getCritThreshold, getAttackSummary } from './utils.js'
 import { foundryEqualOrNewerThan } from './versions.js'
 
 const { getProperty } = foundry.utils
@@ -192,6 +192,7 @@ export async function rollMobAttackIndividually(data) {
 
   let totalPluralOrNot = ` ${game.i18n.localize((messageData.totalHitAttacks === 1) ? 'MAT.numTotalHitsSingular' : 'MAT.numTotalHitsPlural')}`
   messageData['totalPluralOrNot'] = totalPluralOrNot
+  messageData['summary'] = getAttackSummary(data)
 
   let messageText
   if (foundryEqualOrNewerThan('13.0.0')) {
