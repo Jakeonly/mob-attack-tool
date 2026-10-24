@@ -1,5 +1,5 @@
 import { moduleName } from './mobAttack.js'
-import { endGroupedMobTurn, getDamageFormulaAndType, sendChatMessage, getAttackBonus, callMidiMacro, getAttackData, getDamageOptions, formatAttackTargets, getTextFromAttackBonus, isTargetCritImmune, isTargetCritOnlyNat20, getCritThreshold } from './utils.js'
+import { endGroupedMobTurn, getDamageFormulaAndType, sendChatMessage, getAttackBonus, callMidiMacro, getAttackData, getDamageOptions, formatAttackTargets, getTextFromAttackBonus, isTargetCritImmune, isTargetCritOnlyNat20, isTargetAutoCrit, getCritThreshold } from './utils.js'
 import { foundryEqualOrNewerThan } from './versions.js'
 
 const { getProperty } = foundry.utils
@@ -61,6 +61,9 @@ export async function rollMobAttackIndividually(data) {
       if (isTargetCritOnlyNat20(value[j]?.targetId)) critThreshold = 20
       // Crit-immune targets ignore the whole critical range (including expanded ranges)
       const immuneToCrit = isTargetCritImmune(value[j]?.targetId)
+      //Targets that receives automatic critical hits
+      const allCrits = isTargetAutoCrit(value[j]?.targetId)
+      if(allCrits) critThreshold = 0
 
       let tokenAttackList = []
       let discardedRollTotal

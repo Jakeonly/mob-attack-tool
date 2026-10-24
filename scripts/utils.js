@@ -261,7 +261,7 @@ export function setTargetCritOption(targetId, option, value) {
   return getTargetCritOptions(targetId)
 }
 
-export const CRIT_OPTIONS = ['immuneToCrit', 'critOnlyNat20']
+export const CRIT_OPTIONS = ['immuneToCrit', 'critOnlyNat20', 'autoCrit']
 
 /**
  * Whether a target token is marked as immune to critical hits
@@ -279,6 +279,15 @@ export function isTargetCritImmune(targetId) {
  */
 export function isTargetCritOnlyNat20(targetId) {
   return getTargetCritOption(targetId, 'critOnlyNat20')
+}
+
+/**
+ * Whether a target token is marked as auto critical hits
+ * @param {string} targetId token id
+ * @returns {boolean}
+ */
+export function isTargetAutoCrit(targetId) {
+  return getTargetCritOption(targetId, 'autoCrit')
 }
 
 /**
