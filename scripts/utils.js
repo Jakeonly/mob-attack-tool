@@ -179,6 +179,13 @@ const targetCritOptions = new Map()
 const NO_TARGET_KEY = 'no-target'
 const critOptionsKey = targetId => targetId || NO_TARGET_KEY
 
+/**
+ * Forget the critical hit options changed by hand, so they follow the targets' flags again
+ */
+export function clearTargetCritOptions() {
+  targetCritOptions.clear()
+}
+
 // Flags (on the target's actor or token) that enable a critical hit option automatically,
 // e.g. set by an active effect with the attribute key 'flags.mobattack.only20'
 const CRIT_OPTION_FLAGS = {
@@ -261,7 +268,7 @@ export function setTargetCritOption(targetId, option, value) {
   return getTargetCritOptions(targetId)
 }
 
-export const CRIT_OPTIONS = ['immuneToCrit', 'critOnlyNat20']
+export const CRIT_OPTIONS = ['immuneToCrit', 'critOnlyNat20', 'autoCrit']
 
 /**
  * Whether a target token is marked as immune to critical hits
@@ -279,6 +286,62 @@ export function isTargetCritImmune(targetId) {
  */
 export function isTargetCritOnlyNat20(targetId) {
   return getTargetCritOption(targetId, 'critOnlyNat20')
+}
+
+/**
+ * Whether a target token is marked as auto critical hits
+ * @param {string} targetId token id
+ * @returns {boolean}
+ */
+export function isTargetAutoCrit(targetId) {
+  return getTargetCritOption(targetId, 'autoCrit')
+}
+
+const SUMMARY_COLORS = {
+  tripleCritical: '#9b59b6',
+  extraDice: '#3498db',
+  doubleDamage: '#e74c3c',
+  advantage: '#2ecc71',
+  normal: '#bdc3c7',
+  disadvantage: '#e67e22',
+  elvenAccuracy: '#1abc9c',
+  immuneToCrit: '#7f8c8d',
+  critOnlyNat20: '#f1c40f',
+  autoCrit: '#ff4757',
+  acModifier: '#5dade2',
+}
+
+/**
+ * Build the summary of the options chosen for a mob attack, shown at the end of the results message
+ * @param {object} data mob attack data
+ * @param {boolean} includeCritOptions whether to include the targets' critical hit options
+ * @returns {{label: string, color: string}[]}
+ */
+export function getAttackSummary(data, includeCritOptions = true) {
+  const summary = []
+  const add = (key, label) => summary.push({ label, color: SUMMARY_COLORS[key] })
+
+  if (data.tripleCritical ?? data.data?.tripleCritical) add('tripleCritical', 'TripleCritical')
+  if (data.extraDice ?? data.data?.extraDice) add('extraDice', 'ExtraDice')
+  if (data.doubleDamage ?? data.data?.doubleDamage) add('doubleDamage', 'DoubleDamage')
+
+  if (data.withAdvantage) add('advantage', 'Ventaja')
+  else if (data.withElvenAcurracy) add('elvenAccuracy', 'ElvenAccuracy')
+  else if (data.withDisadvantage) add('disadvantage', 'Desventaja')
+  else add('normal', 'Normal')
+
+  if (includeCritOptions) {
+    const targetIds = new Set(Object.values(data.attacks ?? {}).flat().map(attack => attack?.targetId ?? ''))
+    const anyTarget = check => [...targetIds].some(check)
+    if (anyTarget(isTargetCritImmune)) add('immuneToCrit', 'InmuneCrit')
+    if (anyTarget(isTargetCritOnlyNat20)) add('critOnlyNat20', 'Only20')
+    if (anyTarget(isTargetAutoCrit)) add('autoCrit', 'AutoCrit')
+  }
+
+  const armorClassMod = game.settings.get(moduleName, 'savedArmorClassMod')
+  if (armorClassMod) add('acModifier', `AC Modifier: ${armorClassMod}`)
+
+  return summary
 }
 
 /**

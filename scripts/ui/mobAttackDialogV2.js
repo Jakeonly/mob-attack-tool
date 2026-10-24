@@ -1,3 +1,8 @@
+/*
+====================================================
+ DONT USE THIS FILE, WE USE V1 ONLY ON FOUNDRY 12
+ ===================================================
+*/
 import { moduleName } from '../mobAttack.js'
 import { foundryEqualOrNewerThan } from '../versions.js'
 import { getTargetData, prepareMonsters, prepareMobAttack, checkTarget, setSelectedDamageType, updateWeaponDamageDisplay, setTargetCritOption, getTargetCritOptions, getCritThresholdSummary } from '../utils.js'

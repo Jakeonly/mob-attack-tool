@@ -82,6 +82,11 @@
 								{{#if this.critOnlyNat20}}checked{{/if}} />
 							{{localize 'MAT.critOnlyNat20'}}
 						</label>
+						<label class="mat-crit-option" title="{{localize 'MAT.autoCritTitle'}}">
+							<input type="checkbox" class="targetCritOption" data-option="autoCrit" data-target-id="{{this.targetId}}"
+								{{#if this.autoCrit}}checked{{/if}} />
+							{{localize 'MAT.autoCrit'}}
+						</label>
 					</div>
 					<div class="mat-attacks-on-target-box">
 						{{#each this.weapons}}
@@ -116,6 +121,11 @@
 						{{#if noTargetCritOptions.critOnlyNat20}}checked{{/if}} />
 					{{localize 'MAT.critOnlyNat20'}}
 				</label>
+				<label class="mat-crit-option" title="{{localize 'MAT.autoCritTitle'}}">
+							<input type="checkbox" class="targetCritOption" data-option="autoCrit" data-target-id="{{this.targetId}}"
+								{{#if this.autoCrit}}checked{{/if}} />
+							{{localize 'MAT.autoCrit'}}
+						</label>
 			</div>
 			{{/if}}
 			<div class="form-group">
