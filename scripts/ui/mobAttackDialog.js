@@ -23,6 +23,11 @@ export async function createAndRenderDialog() {
   // First time opening the dialog, so no changes yet
   await game.settings.set(moduleName, 'hiddenChangedMob', false)
 
+  // Without persistence, a new dialog starts without the AC modifier of the previous one
+  if (!(game.user.getFlag(moduleName, 'persistACmod') ?? game.settings.get(moduleName, 'persistACmod'))) {
+    await game.settings.set(moduleName, 'savedArmorClassMod', 0)
+  }
+
   // create dialog
   const mobDialog = new MobAttackDialog()
   mobDialog.render(true)
@@ -717,6 +722,16 @@ export class MobAttackDialog extends FormApplication {
       this.armorClassMod = acMod - 1
       await game.settings.set(moduleName, 'savedArmorClassMod', acMod - 1)
       // this.targetUpdate = true;
+      this.localUpdate = true
+      this.render(true)
+    })
+
+    // AC modifier typed into the input
+    html.on('change', 'input[name="armorClassMod"]', async (event) => {
+      let acMod = parseInt(event.currentTarget.value)
+      if (Number.isNaN(acMod)) acMod = 0
+      this.armorClassMod = acMod
+      await game.settings.set(moduleName, 'savedArmorClassMod', acMod)
       this.localUpdate = true
       this.render(true)
     })
