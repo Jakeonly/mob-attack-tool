@@ -62,8 +62,7 @@ export async function rollMobAttackIndividually(data) {
       // Crit-immune targets ignore the whole critical range (including expanded ranges)
       const immuneToCrit = isTargetCritImmune(value[j]?.targetId)
       //Targets that receives automatic critical hits
-      const allCrits = isTargetAutoCrit(value[j]?.targetId)
-      if(allCrits) critThreshold = 0
+      let allCritsText = isTargetAutoCrit(value[j]?.targetId)
 
       let tokenAttackList = []
       let discardedRollTotal
@@ -87,14 +86,13 @@ export async function rollMobAttackIndividually(data) {
             }
           }
         }
-
         // Determine crits and natural 1s
         // Also, make a list of tokens that successfully attacked for (animation) macro purposes
         let attackToken
         let availableTokens = data.selectedTokenIds.filter(t => (!tokenAttackList.includes(t) || (canvas.tokens.get(t.tokenId).actor.id === weaponData.actor.id && tokenAttackList.filter(atkToken => atkToken.tokenId === t.tokenId).length < Math.floor(availableAttacks / data.numSelected))))
         const naturalRoll = attackRollEvaluated[i].total - finalAttackBonus
-        if (!immuneToCrit && naturalRoll >= critThreshold) {
-          numCrits++
+        if (!immuneToCrit && (naturalRoll >= critThreshold || allCritsText)) {
+          if (!immuneToCrit) numCrits++
           numHitAttacks += 1
           successfulAttackRolls.push(attackRollEvaluated[i])
           atkRollData.push({ roll: attackRollEvaluated[i].total, color: 'max', finalAttackBonusText, discarded, discardedRollTotal })
@@ -122,7 +120,12 @@ export async function rollMobAttackIndividually(data) {
       const hitTarget = numHitAttacks > 0
       let crits, hitOrMiss
       if (hitTarget) {
-        crits = numCrits
+        if(!allCritsText){
+          crits = numCrits
+        }else{
+          if(!immuneToCrit)
+            crits = numHitAttacks
+        }
         hitOrMiss = game.i18n.localize((crits === 1) ? 'MAT.attackHitSingular' : 'MAT.attackHitPlural')
       }
       else {
@@ -243,7 +246,9 @@ export async function processIndividualDamageRolls(data, weaponData, finalAttack
   const FoundryDie = foundry.dice?.terms?.Die || Die
   const FoundryNumericTerm = foundry.dice?.terms?.NumericTerm || globalThis.NumericTerm || class {}
   const attackData = getAttackData(weaponData)
-
+  //Autocrit Handler
+  let allCrits = isTargetAutoCrit(targetId)
+  if(allCrits) numCrits = numHitAttacks
   // Targets immune to critical hits take normal damage: natural 20s still hit, but deal no extra crit dice
   const noCrit = isTargetCritImmune(targetId)
   if (noCrit) numCrits = 0
