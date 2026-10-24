@@ -179,6 +179,13 @@ const targetCritOptions = new Map()
 const NO_TARGET_KEY = 'no-target'
 const critOptionsKey = targetId => targetId || NO_TARGET_KEY
 
+/**
+ * Forget the critical hit options changed by hand, so they follow the targets' flags again
+ */
+export function clearTargetCritOptions() {
+  targetCritOptions.clear()
+}
+
 // Flags (on the target's actor or token) that enable a critical hit option automatically,
 // e.g. set by an active effect with the attribute key 'flags.mobattack.only20'
 const CRIT_OPTION_FLAGS = {

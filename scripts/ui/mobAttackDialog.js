@@ -1,5 +1,5 @@
 import { moduleName } from '../mobAttack.js'
-import { checkTarget, getTargetData, prepareMonsters, prepareMobAttack, setSelectedDamageType, updateWeaponDamageDisplay, setTargetCritOption, getTargetCritOptions, getCritThresholdSummary } from '../utils.js'
+import { checkTarget, getTargetData, prepareMonsters, prepareMobAttack, setSelectedDamageType, updateWeaponDamageDisplay, setTargetCritOption, getTargetCritOptions, clearTargetCritOptions, getCritThresholdSummary } from '../utils.js'
 import { rollMobAttackIndividually } from '../individualRolls.js'
 import { rollMobAttack } from '../mobRules.js'
 import { foundryEqualOrNewerThan } from '../versions.js'
@@ -27,6 +27,9 @@ export async function createAndRenderDialog() {
   if (!(game.user.getFlag(moduleName, 'persistACmod') ?? game.settings.get(moduleName, 'persistACmod'))) {
     await game.settings.set(moduleName, 'savedArmorClassMod', 0)
   }
+
+  // Critical hit options changed by hand only last for the dialog they were changed in
+  clearTargetCritOptions()
 
   // create dialog
   const mobDialog = new MobAttackDialog()
